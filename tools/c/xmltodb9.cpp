@@ -2,7 +2,7 @@
  *  程序名：xmltodb9.cpp，本程序是数据中心的公共功能模块，用于把xml文件入库到mysql的表中。
  *  增加程序的容错性，完善splitbuffer函数：1）支持日期时间没有分隔符的情况；2）删除数字字段中的非法字符。
  *  同时，需要修改sql语句中日期时间字段的格式。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

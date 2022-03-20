@@ -1,7 +1,7 @@
 /*
  *  程序名：fileclient3.cpp，
  *  把待传输的文件清单发送给服务端，并接收服务端的确认。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 

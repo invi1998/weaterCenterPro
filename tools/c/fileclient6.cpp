@@ -1,7 +1,7 @@
 /*
  *  程序名：fileclient6.cpp，
  *  把接收文件传输的结果改为非阻塞的方式。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 

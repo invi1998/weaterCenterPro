@@ -1,6 +1,6 @@
 /*
  *  程序名：inserttable.cpp，此程序演示开发框架操作MySQL数据库（向表中插入5条记录）。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_mysql.h"   // 开发框架操作MySQL的头文件。
 

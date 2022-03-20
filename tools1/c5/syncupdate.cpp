@@ -1,6 +1,6 @@
 /*
  *  程序名：syncupdate.cpp，本程序是数据中心的公共功能模块，采用刷新的方法同步MySQL数据库之间的表。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_tools.h"
 

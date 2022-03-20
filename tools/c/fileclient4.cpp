@@ -1,7 +1,7 @@
 /*
  *  程序名：fileclient4.cpp，
  *  把待传输的文件内容发送给服务端，并接收服务端的确认。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 

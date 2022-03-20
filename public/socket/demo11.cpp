@@ -1,6 +1,6 @@
 /*
  * 程序名：demo11.cpp，此程序用于演示网银APP软件的客户端。
- * 作者：吴从周。
+ * author：invi
 */
 #include "../_public.h"
 

@@ -2,7 +2,7 @@
  *  程序名：xmltodb10.cpp，本程序是数据中心的公共功能模块，用于把xml文件入库到mysql的表中。
  *  修改程序，每入库一条数据sleep1秒，在入库的过程中关闭数据库，得到1053和2013的错误代码。
  *  处理入库函数返回的各种错误。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

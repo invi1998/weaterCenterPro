@@ -1,6 +1,6 @@
 /*
  * 程序名：demo33.cpp，此程序是网络通信的客户端程序，用于演示异步通信（poll）效率。
- * 作者：吴从周。
+ * author：invi
 */
 #include "../_public.h"
  

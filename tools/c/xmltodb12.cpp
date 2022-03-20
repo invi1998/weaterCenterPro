@@ -4,7 +4,7 @@
  *  在_xmltodb返回失败的位置加上回滚事务，让execsql回滚。
  *  加上PActive;
  *  程序可正式启用了。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

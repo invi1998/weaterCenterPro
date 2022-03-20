@@ -1,7 +1,7 @@
 /*
  *  程序名：syncincrement_oracle.cpp，本程序是数据中心的公共功能模块，采用增量的
  *  方法同步Oracle数据库之间的表。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_tools_oracle.h"
 

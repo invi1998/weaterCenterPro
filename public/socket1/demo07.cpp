@@ -1,6 +1,6 @@
 /*
  * 程序名：demo07.cpp，此程序用于演示采用TcpClient类实现socket通讯的客户端。
- * 作者：吴从周。
+ * author：invi
 */
 #include "../_public.h"
  

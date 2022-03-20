@@ -5,7 +5,7 @@
  *  创建T_ZHOBTCODE1和T_ZHOBTMIND1表。
  *  修改/project/tools/ini/xmltodb.xml文件，把数据入库到T_ZHOBTCODE1和T_ZHOBTMIND1表中。
  *  执行插入的sql语句，把数据先插进去，核对插入结果。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

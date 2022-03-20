@@ -1,7 +1,7 @@
 /*
  *  程序名：filetoblob.cpp，此程序演示开发框架操作Oracle数据库。
  *  把当前目录的pic_in.jpeg文件写入Oracle的BLOB字段中。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_ooci.h"   // 开发框架操作Oracle的头文件。
 

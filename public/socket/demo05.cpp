@@ -1,6 +1,6 @@
 /*
  * 程序名：demo05.cpp，此程序用于演示不粘包的socket客户端。
- * 作者：吴从周。
+ * author：invi
 */
 #include "../_public.h"
  

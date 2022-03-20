@@ -1,6 +1,6 @@
 /*
  *  程序名：createtable.cpp，此程序演示开发框架操作PostgreSQL数据库（创建表）。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_postgresql.h"   // 开发框架操作PostgreSQL的头文件。
 

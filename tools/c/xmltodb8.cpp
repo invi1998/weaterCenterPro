@@ -5,7 +5,7 @@
  *  手工修改最后一个ZHOBTCODE*.xml文件中某行的数据，测试update的效果。
  *  手工修改一个ZHOBTMIND*.xml文件中某行的数据，在数字字段中搞一个非法的值，或非法的时间，能否记录日志？
  *  应该完善splitbuffer函数：1）支持日期时间没有分隔符的情况；2）删除数字字段中的非法字符。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

@@ -1,6 +1,6 @@
 /*
  *  execsql.cpp，这是一个工具程序，用于执行一个sql脚本文件。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

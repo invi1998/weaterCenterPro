@@ -1,7 +1,7 @@
 /*
  *  程序名：fileclient7.cpp，采用tcp协议，实现文件接收的客户端。
  *  把tcpputfiles.cpp拷过来，修改st_arg结构体，修改帮助，删除发送文件的代码，只保留登录和接收服务端发过来的心跳。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 

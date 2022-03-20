@@ -1,6 +1,6 @@
 /*
  * 程序名：tcpgetfiles.cpp，采用tcp协议，实现文件下载的客户端。
- * 作者：吴从周。
+ * author：invi
 */
 #include "_public.h"
 

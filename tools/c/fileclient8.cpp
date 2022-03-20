@@ -1,6 +1,6 @@
 /*
  *  程序名：fileclient8.cpp，采用tcp协议，实现文件接收的客户端。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 

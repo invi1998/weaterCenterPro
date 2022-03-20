@@ -6,7 +6,7 @@
     tmp.sh中有脚本。
     采用了线程池。
     webserver4比webserver3并没有快多少，性能瓶颈会不会在数据库？
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

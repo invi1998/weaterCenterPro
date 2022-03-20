@@ -1,6 +1,6 @@
 /*
  *  程序名：deletetable.cpp，此程序演示开发框架操作MySQL数据库（删除表中的记录）。
- *  作者：吴从周。
+ *  author：invi
 */
 
 #include "_mysql.h"       // 开发框架操作MySQL的头文件。

@@ -1,7 +1,7 @@
 /*
  *  程序名：filetoclob.cpp，此程序演示开发框架操作Oracle数据库。
  *  把当前目录中的memo_in.txt文件写入Oracle的CLOB字段中。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_ooci.h"   // 开发框架操作Oracle的头文件。
 

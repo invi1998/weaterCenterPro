@@ -1,7 +1,7 @@
 /*
  *  程序名：webserver1.cpp，数据服务总线服务。
  *  最简单的web服务器，收到客户请求的，返回html文件。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

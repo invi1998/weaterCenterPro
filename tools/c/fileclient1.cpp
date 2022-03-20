@@ -1,7 +1,7 @@
 /*
  *  程序名：fileclient1.cpp，文件传输的客户端最原始的样子。
  *  这个程序是把/project/public/socket/demo47_biz.cpp复制过来，修改Using和sleep时间等细节。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
  

@@ -1,6 +1,6 @@
 /*
  *  程序名：crtsurfdata5.cpp  本程序用于生成全国气象站点观测的分钟数据。
- *  作者：吴从周。
+ *  author：invi
 */
 
 #include "_public.h"

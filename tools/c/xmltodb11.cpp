@@ -3,7 +3,7 @@
  *  优化程序，在日志中记录每个xml文件的总行数和插入、更新行数。
  *  增加一个判断，待入库表的字段总数和字段的最大长度不能超过MAXCOLCOUNT和MAXCOLLENA，否则可能出现内存错误。
  *  如果MAXCOLCOUNT和MAXCOLLEN不能满足业务要求，可以加大它。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

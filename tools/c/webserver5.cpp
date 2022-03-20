@@ -3,7 +3,7 @@
     增加了数据库重连代码。
     修改了条件变量的触发机制。
     增加了监控线程。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

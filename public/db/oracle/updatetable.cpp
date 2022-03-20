@@ -1,6 +1,6 @@
 /*
  *  程序名：updatetable.cpp，此程序演示开发框架操作Oracle数据库（修改表中的记录）。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_ooci.h"   // 开发框架操作Oracle的头文件。
 

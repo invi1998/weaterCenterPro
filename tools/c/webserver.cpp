@@ -1,6 +1,6 @@
 /*
  *  程序名：webserver1.cpp，数据服务总线服务。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

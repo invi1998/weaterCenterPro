@@ -1,6 +1,6 @@
 /*
  *  程序名：deletetable.cpp，本程序是数据中心的公共功能模块，用于定时清理表中的数据。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

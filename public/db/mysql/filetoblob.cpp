@@ -1,6 +1,6 @@
 /*
  *  程序名：filetoblob.cpp，此程序演示开发框架操作MySQL数据库（把图片文件存入BLOB字段）。
- *  作者：吴从周。
+ *  author：invi
 */
 
 #include "_mysql.h"       // 开发框架操作MySQL的头文件。

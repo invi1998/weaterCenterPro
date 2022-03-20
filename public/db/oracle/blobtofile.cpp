@@ -1,7 +1,7 @@
 /*
  *  程序名：bolbtofile.cpp，此程序演示开发框架操作Oracle数据库。
  *  把Oracle的BLOB字段的内容提取到目前目录的pic_out.jpeg中。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_ooci.h"   // 开发框架操作Oracle的头文件。
 

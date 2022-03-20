@@ -1,7 +1,7 @@
 /*
  *  程序名：syncincrementex.cpp，本程序是数据中心的公共功能模块，采用增量的方法同步MySQL数据库之间的表。
  *  注意，本程序不使用Federated引擎。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_tools.h"
 

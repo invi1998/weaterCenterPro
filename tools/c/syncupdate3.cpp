@@ -3,7 +3,7 @@
  *  实现分批同步的功能。
     增加一个conn1。
     为了验证程序的正确性，修改了T_ZHOBTCODE3表的数据结构，故意让字段名不同。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

@@ -1,6 +1,6 @@
 /*
  * 程序名：demo27.cpp，此程序用于演示HTTP客户端。
- * 作者：吴从周。
+ * author：invi
 */
 #include "../_public.h"
  

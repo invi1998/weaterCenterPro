@@ -1,6 +1,6 @@
 /*
  *  程序名：selecttable.cpp，此程序演示开发框架操作PostgreSQL数据库（查询表中的记录）。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_postgresql.h"   // 开发框架操作PostgreSQL的头文件。
 

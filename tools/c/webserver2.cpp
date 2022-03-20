@@ -5,7 +5,7 @@
     注意：测试的时候要经常关闭浏览器，从这里拷过去，不要点浏览器的刷新。
     tmp.sh中有脚本。
 
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

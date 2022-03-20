@@ -1,6 +1,6 @@
 /*
  *  程序名：migratetable.cpp，本程序是数据中心的公共功能模块，用于迁移表中的数据。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_tools.h"
 

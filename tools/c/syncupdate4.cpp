@@ -1,7 +1,7 @@
 /*
  *  程序名：syncupdate4.cpp，本程序是数据中心的公共功能模块，采用刷新的方法同步mysql数据库之间的表。
  *  再做一个小优化，如果srccols和dstcols参数省略，则用dsttname表的字段名填充。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"

@@ -1,6 +1,6 @@
 /*
  *  程序名：fileclient2.cpp，文件传输的客户端加上了Using和xml参数解析，修改登录报文，只保留登录和心跳。
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 

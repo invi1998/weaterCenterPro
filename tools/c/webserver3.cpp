@@ -5,7 +5,7 @@
     tmp.sh中有脚本。
     采用了数据库连接池。
 
- *  作者：吴从周。
+ *  author：invi
 */
 #include "_public.h"
 #include "_mysql.h"
