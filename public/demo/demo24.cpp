@@ -1,6 +1,6 @@
 /*
  *  程序名：demo24.cpp，此程序演示开发框架中LocalTime时间函数的使用。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

@@ -1,6 +1,6 @@
 /*
  *  程序名：demo20.cpp，此程序演示开发框架拆分字符串的类CCmdStr的使用。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

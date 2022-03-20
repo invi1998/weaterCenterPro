@@ -1,6 +1,6 @@
 /*
  *  程序名：demo22.cpp，此程序演示调用开发框架的GetXMLBuffer函数解析xml字符串。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

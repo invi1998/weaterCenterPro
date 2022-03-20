@@ -1,6 +1,6 @@
 /*
  *  程序名：demo32.cpp，此程序演示开发框架中采用CDir类获取某目录及其子目录中的文件列表信息。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

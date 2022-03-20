@@ -1,6 +1,6 @@
 /*
  *  程序名：demo29.cpp，此程序演示开发框架中的CTimer类（计时器）的用法。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

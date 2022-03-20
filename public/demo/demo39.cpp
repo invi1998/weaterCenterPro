@@ -1,6 +1,6 @@
 /*
  *  程序名：demo39.cpp，此程序演示开发框架中采用CFile类生成数据文件的用法。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

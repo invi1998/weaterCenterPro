@@ -1,6 +1,6 @@
 /*
  * 程序名：demo26.cpp，此程序演示HTTP协议，接收http请求报文。
- * 作者：吴从周
+ * author：invi
 */
 #include "../_public.h"
  

@@ -1,7 +1,7 @@
 /*
  *  程序名：fileserver8.cpp，文件传输的服务端。
     把tcpputfiles.cpp发送文件的功能抄过来，放在SendFilesMain中。
- *  作者：吴从周
+ *  author：invi
 */
 #include "_public.h"
  

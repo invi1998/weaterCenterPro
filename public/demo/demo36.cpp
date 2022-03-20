@@ -1,6 +1,6 @@
 /*
  *  程序名：demo36.cpp，此程序演示开发框架中FOPEN函数的用法。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

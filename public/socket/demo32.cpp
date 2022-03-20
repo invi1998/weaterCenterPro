@@ -1,6 +1,6 @@
 /*
  * 程序名：demo32.cpp，此程序是网络通信的服务端程序，用于演示同步通信的效率。
- * 作者：吴从周
+ * author：invi
 */
 #include "../_public.h"
  

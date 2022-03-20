@@ -1,7 +1,7 @@
 /*
  *  程序名：demo42.cpp，此程序演示采用开发框架的CLogFile类记录程序的运行日志。
  *  本程序修改demo40.cpp把输出的printf语句改为写日志文件。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

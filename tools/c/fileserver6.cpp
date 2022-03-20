@@ -1,7 +1,7 @@
 /*
  *  程序名：fileserver6.cpp，文件传输的服务端。
  *  和fileserver5.cpp是一样的，没有调整，调整的是客户端。
- *  作者：吴从周
+ *  author：invi
 */
 #include "_public.h"
  

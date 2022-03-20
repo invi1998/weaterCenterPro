@@ -1,6 +1,6 @@
 /*
  *  程序名：demo45.cpp，此程序演示采用开发框架的CIniFile类加载参数文件。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

@@ -1,6 +1,6 @@
 /*
  *  程序名：demo43.cpp，此程序演示开发框架的CLogFile类的日志文件的切换。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

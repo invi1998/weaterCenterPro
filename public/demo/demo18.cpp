@@ -1,6 +1,6 @@
 /*
  *  程序名：demo18.cpp，此程序演示开发框架正则表达示MatchStr函数的使用。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

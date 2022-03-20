@@ -1,6 +1,6 @@
 /*
  *  程序名：demo30.cpp，此程序演示开发框架中采用MKDIR函数根据绝对路径的文件名或目录名逐级的创建目录。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

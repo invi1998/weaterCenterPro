@@ -1,7 +1,7 @@
 /*
  *  程序名：fileserver7.cpp，文件传输的服务端。
     原来的代码不变，开始增加发送文件的功能，修改st_arg结构体，暂时只处理客户端的登录报文和心跳。
- *  作者：吴从周
+ *  author：invi
 */
 #include "_public.h"
  

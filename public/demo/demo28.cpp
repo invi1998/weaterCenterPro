@@ -1,6 +1,6 @@
 /*
  *  程序名：demo28.cpp，此程序演示开发框架中采用AddTime进行时间的运算。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
 

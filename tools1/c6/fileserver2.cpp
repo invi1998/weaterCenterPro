@@ -1,6 +1,6 @@
 /*
  * 程序名：fileserver.cpp，文件传输的服务端。
- * 作者：吴从周
+ * author：invi
 */
 #include "_public.h"
 

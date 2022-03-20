@@ -1,6 +1,6 @@
 /*
  *  程序名：demo48.cpp，此程序演示采用开发框架的CTcpServer类实现socket通信的服务端。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
  

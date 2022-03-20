@@ -1,6 +1,6 @@
 /*
  *  程序名：demo52.cpp，此程序演示采用开发框架的Cftp类下载文件。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_ftp.h"
 

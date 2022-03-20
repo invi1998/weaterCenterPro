@@ -1,6 +1,6 @@
 /*
  *  程序名：demo47.cpp，此程序演示采用开发框架的CTcpClient类实现socket通信的客户端。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_public.h"
  

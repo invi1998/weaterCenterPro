@@ -1,6 +1,6 @@
 /*
  * 程序名：demo08.cpp，此程序用于演示采用TcpServer类实现socket通讯的服务端。
- * 作者：吴从周
+ * author：invi
 */
 #include "../_public.h"
  

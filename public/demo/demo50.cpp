@@ -1,6 +1,6 @@
 /*
  *  程序名：demo50.cpp，此程序演示采用开发框架的Cftp类获取服务器文件列表、时间和大小。
- *  作者：吴从周
+ *  author：invi
 */
 #include "../_ftp.h"
 
