@@ -25,9 +25,9 @@ int main(int argc, char *argv[])
     printf("Example:/project/idc1/bin/crsurfdata1 /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc\n");
 
     // 然后对这些参数做一个详细的打印说明
-    printf("全国气象站点参数文件 inifile \n");
-    printf("生成的测试气象数据存放的目录 outpath\n");
-    printf("存放的日志 logfile\n\n");
+    printf("全国气象站点参数文件 : inifile \n");
+    printf("生成的测试气象数据存放的目录 : outpath\n");
+    printf("存放的日志 : logfile\n\n");
 
     // 程序退出
     return -1;
