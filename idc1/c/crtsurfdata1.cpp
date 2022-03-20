@@ -5,34 +5,33 @@
 
 #include "_public.h"
 
-CLogFile logfile;    // 日志类。
-
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
-  if (argc!=4) 
+
+  // 全国气象站点参数文件 inifile
+
+  // 生成的测试气象数据存放的目录 outpath
+
+  // 存放的日志 logfile
+
+
+  // 所以这个程序有3个参数，那么argc的值应该为4
+  if(argc!=4)
   {
-    // 如果参数非法，给出帮助文档。
+    // 不等于4表示程序运行的方法不正确(这里打印提示改程序需要这3个参数)
     printf("Using:./crtsurfdata1 inifile outpath logfile\n");
-    printf("Example:/project/idc1/bin/crtsurfdata1 /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc/crtsurfdata1.log\n\n");
 
-    printf("inifile 全国气象站点参数文件名。\n");
-    printf("outpath 全国气象站点数据文件存放的目录。\n");
-    printf("logfile 本程序运行的日志文件名。\n\n");
+    // 只提示正确方法还不够，这里给一个例子说明
+    printf("Example:/project/idc1/bin/crsurfdata1 /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc\n");
 
+    // 然后对这些参数做一个详细的打印说明
+    printf("全国气象站点参数文件 inifile \n");
+    printf("生成的测试气象数据存放的目录 outpath\n");
+    printf("存放的日志 logfile\n\n");
+
+    // 程序退出
     return -1;
   }
-
-  // 打开程序的日志文件。
-  if (logfile.Open(argv[3],"a+",false)==false)
-  {
-    printf("logfile.Open(%s) failed.\n",argv[3]); return -1;
-  }
-
-  logfile.Write("crtsurfdata1 开始运行。\n");
-
-  // 在这里插入处理业务的代码。
-
-  logfile.WriteEx("crtsurfdata1 运行结束。\n");
 
   return 0;
 }
