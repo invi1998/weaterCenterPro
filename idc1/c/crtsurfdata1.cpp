@@ -5,6 +5,9 @@
 
 #include "_public.h"
 
+// 日志类一般会将其定义为全局的变量
+CLogFile logfile;
+
 int main(int argc, char *argv[])
 {
 
@@ -22,7 +25,7 @@ int main(int argc, char *argv[])
     printf("Using:./crtsurfdata1 inifile outpath logfile\n");
 
     // 只提示正确方法还不够，这里给一个例子说明
-    printf("Example:/project/idc1/bin/crsurfdata1 /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc\n");
+    printf("Example:/project/idc1/bin/crsurfdata1 /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc/crtsurfdata1.log\n\n");
 
     // 然后对这些参数做一个详细的打印说明
     printf("全国气象站点参数文件 : inifile \n");
@@ -32,6 +35,22 @@ int main(int argc, char *argv[])
     // 程序退出
     return -1;
   }
+
+  // 打开日志
+  if(logfile.Open(argv[3]) == false)
+  {
+    // 日志文件打开失败
+    printf("logfile.Open(%s) faild.\n", argv[3]);
+    // 程序退出
+    return -1;
+  }
+
+  // 往日志中写入内容
+  logfile.Write("crtsurfdata1 开始运行。\n");
+
+  // 业务代码
+
+  logfile.Write("crtsurfdata1 运行结束。\n");
 
   return 0;
 }
