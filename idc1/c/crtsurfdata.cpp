@@ -219,7 +219,7 @@ bool CrtSurfFile(const char* outpath, const char* datafmt)
   char strFileName[301];
 
   // 文件名采用全路径，文件目录_数据生成时间_进程id.文件类型（注意，文件名拼接上进程id是常用的命名手法，目的是为了保证生成的文件名不重复，当然不加这个也是可以的）
-  sprintf(strFileName, "%s/SURF_ZH_%s_%d_.%s", outpath, strddatatime, getpid(), datafmt);
+  sprintf(strFileName, "%s/SURF_ZH_%s_%d.%s", outpath, strddatatime, getpid(), datafmt);
 
   // 打开文件, 以写入的方式打开文件
   if(File.OpenForRename(strFileName, "w") == false)
@@ -237,6 +237,18 @@ bool CrtSurfFile(const char* outpath, const char* datafmt)
     File.Fprintf("站点代码,数据时间,气温,气压,相对湿度,风向,风速,降雨量,能见度\n");
   }
 
+  // xml数据集开始标签
+  if(strcmp(datafmt, "xml") == 0)
+  {
+    File.Fprintf("<data>\n");
+  }
+
+  // Json格式
+  if(strcmp(datafmt, "json") == 0)
+  {
+    File.Fprintf("{\"data\":[\n");
+  }
+
   // 遍历存放观测数据的vsurfdata容器
   for(auto iter = vsurfdata.begin(); iter != vsurfdata.end(); ++iter)
   {
@@ -249,6 +261,47 @@ bool CrtSurfFile(const char* outpath, const char* datafmt)
         (*iter).obtid,(*iter).ddatetime,(*iter).t/10.0,(*iter).p/10.0,\
         (*iter).u,(*iter).wd,(*iter).wf/10.0,(*iter).r/10.0,(*iter).vis/10.0);
     }
+
+    if(strcmp(datafmt, "xml") == 0)
+    {
+      // 这里最后面这3个字段要除以10.0，表示是一个浮点数的运算
+      File.Fprintf("<obtid>%s</obtid><ddatetime>%s</ddatetime><t>%.1f</t><p>%.1f</p>"\
+                   "<u>%d</u><wd>%d</wd><wf>%.1f</wf><r>%.1f</r><vis>%.1f</vis><endl/>\n",\
+                    (*iter).obtid,(*iter).ddatetime,(*iter).t/10.0,(*iter).p/10.0,\
+                    (*iter).u,(*iter).wd,(*iter).wf/10.0,(*iter).r/10.0,(*iter).vis/10.0);
+    }
+
+    // 写入一条记录
+    if(strcmp(datafmt, "json") == 0)
+    {
+      // 这里最后面这3个字段要除以10.0，表示是一个浮点数的运算
+      File.Fprintf("{\"obtid\":\"%s\",\"ddatetime\":\"%s\",\"t\":\"%.1f\",\"p\":\"%.1f\","\
+                   "\"u\":\"%d\",\"wd\":\"%d\",\"wf\":\"%.1f\",\"r\":\"%.1f\",\"vis\":\"%.1f\"}",\
+                    (*iter).obtid,(*iter).ddatetime,(*iter).t/10.0,(*iter).p/10.0,\
+                    (*iter).u,(*iter).wd,(*iter).wf/10.0,(*iter).r/10.0,(*iter).vis/10.0);
+      if(iter != vsurfdata.end() - 1)
+      {
+        // 如果是最后一行，json数据里就不需要加","
+        File.Fprintf(",\n");
+      }
+      else
+      {
+        File.Fprintf("\n");
+      }
+    }
+
+  }
+
+  // xml 数据集结束标签
+  if(strcmp(datafmt, "xml") == 0)
+  {
+    File.Fprintf("</data>\n");
+  }
+
+  // json 数据集结束标签
+  if(strcmp(datafmt, "json") == 0)
+  {
+    File.Fprintf("]}\n");
   }
 
   // 关闭文件
