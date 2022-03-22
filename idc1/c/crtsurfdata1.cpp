@@ -5,6 +5,8 @@
 
 #include "_public.h"
 
+// class CLogFile;
+
 // 日志类一般会将其定义为全局的变量
 CLogFile logfile;
 

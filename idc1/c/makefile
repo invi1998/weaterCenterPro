@@ -2,7 +2,7 @@
 PUBINCL = -I/project/public
 
 # 开发框架cpp文件名，这里直接包含进来，没有采用链接库，是为了方便调试
-PUBCPP = -I/project/public/_public.cpp
+PUBCPP = /project/public/_public.cpp
 
 # 编译参数
 CFLAGS = -g
