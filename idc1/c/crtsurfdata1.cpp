@@ -8,7 +8,7 @@
 // class CLogFile;
 
 // 日志类一般会将其定义为全局的变量
-CLogFile logfile;
+CLogFile logfile(10);
 
 int main(int argc, char *argv[])
 {
@@ -51,6 +51,10 @@ int main(int argc, char *argv[])
   logfile.Write("crtsurfdata1 开始运行。\n");
 
   // 业务代码
+  for(int i = 0; i < 10000000; i++)
+  {
+    logfile.Write("这是第 %d 条日志记录。", i);
+  }
 
   logfile.Write("crtsurfdata1 运行结束。\n");
 
