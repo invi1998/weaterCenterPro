@@ -31,6 +31,8 @@ vector<struct st_stcode> vstcode;
 // 把气象站点参数加载到参数容器中的函数
 bool LoadSTCode(const char * inifile);
 
+char strddatatime[21];    // 观测数据时间
+
 // 全国气象站点分钟观测数据结构
 struct st_surfdata
 {
@@ -52,31 +54,34 @@ vector<struct st_surfdata> vsurfdata;
 // 这个函数是根据一个容器再加上一个随机数生成另外一个容器，这种函数的运行不会失败，所以不需要返回值
 void CrtSurfData();
 
+// 生成数据文件
+bool CrtSurfFile(const char* outpath, const char* datafmt);
+
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
 {
 
   // 全国气象站点参数文件 inifile
-
   // 生成的测试气象数据存放的目录 outpath
-
   // 存放的日志 logfile
+  // 指定生成的数据保存为什么格式 datafmt
 
 
-  // 所以这个程序有3个参数，那么argc的值应该为4
-  if(argc!=4)
+  // 所以这个程序有4个参数，那么argc的值应该为5
+  if(argc!=5)
   {
     // 不等于4表示程序运行的方法不正确(这里打印提示改程序需要这3个参数)
-    printf("Using:./crtsurfdata inifile outpath logfile\n");
+    printf("Using:./crtsurfdata inifile outpath logfile datafmt\n");
 
     // 只提示正确方法还不够，这里给一个例子说明
-    printf("Example:/project/idc1/bin/crtsurfdata /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc/crtsurfdata.log\n\n");
+    printf("Example:/project/idc1/bin/crtsurfdata /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc/crtsurfdata.log xml,json,csv\n\n");
 
     // 然后对这些参数做一个详细的打印说明
     printf("全国气象站点参数文件 : inifile \n");
     printf("生成的测试气象数据存放的目录 : outpath\n");
-    printf("存放的日志 : logfile\n\n");
+    printf("日志存放路径 : logfile\n");
+    printf("指定生成的数据保存为什么格式 : datafmt\n\n");
 
     // 程序退出
     return -1;
@@ -104,6 +109,10 @@ int main(int argc, char *argv[])
   // 模拟生成全国气象站点分钟观测数据，存放在vsurfdata容器中。
   CrtSurfData();
 
+  // 将生成的测试数据格式化为指定格式的数据文件
+  if(strstr(argv[4], "xml") != 0) CrtSurfFile(argv[2], "xml");      // xml
+  if(strstr(argv[4], "json") != 0) CrtSurfFile(argv[2], "json");    // json
+  if(strstr(argv[4], "csv") != 0) CrtSurfFile(argv[2], "csv");      // csv
 
   logfile.Write("crtsurfdata 运行结束。\n");
 
@@ -175,7 +184,6 @@ void CrtSurfData()
   srand(time(0));
 
   // 获取当前时间，作为观测时间
-  char strddatatime[21];
   memset(strddatatime, 0, sizeof(strddatatime));
   LocalTime(strddatatime, "yyyymmddhh24miss");
 
@@ -201,4 +209,53 @@ void CrtSurfData()
     vsurfdata.push_back(stsurfdata);
 
   }
+}
+
+// 生成数据文件 把容器vsurfdata中的全国气象站点的分钟观测数据写入文件
+bool CrtSurfFile(const char* outpath, const char* datafmt)
+{
+  CFile File;
+  // 拼接生成数据的文件名 例如：/tmp/surfdata/SURF_ZH_20220322180345_2243.CSV
+  char strFileName[301];
+
+  // 文件名采用全路径，文件目录_数据生成时间_进程id.文件类型（注意，文件名拼接上进程id是常用的命名手法，目的是为了保证生成的文件名不重复，当然不加这个也是可以的）
+  sprintf(strFileName, "%s/SURF_ZH_%s_%d_.%s", outpath, strddatatime, getpid(), datafmt);
+
+  // 打开文件, 以写入的方式打开文件
+  if(File.OpenForRename(strFileName, "w") == false)
+  {
+    // 失败的话，打印日志做一个提示
+    // 失败的原因一般都是磁盘空间不足或者权限不足
+    logfile.Write("File.OpenForRename(%s) faild.\n", strFileName);
+    return false;
+  }
+
+  // 写入第一行标题（标题是为了增加该数据文件的可读性，不然你这个数据文件各个字段表示什么意思别人不清楚）
+  // 注意，只有数据格式为csv的时候才需要写入标题
+  if(strcmp(datafmt, "csv") == 0)
+  {
+    File.Fprintf("站点代码,数据时间,气温,气压,相对湿度,风向,风速,降雨量,能见度\n");
+  }
+
+  // 遍历存放观测数据的vsurfdata容器
+  for(auto iter = vsurfdata.begin(); iter != vsurfdata.end(); ++iter)
+  {
+
+    // 写入一条记录
+    if(strcmp(datafmt, "csv") == 0)
+    {
+      // 这里最后面这3个字段要除以10.0，表示是一个浮点数的运算
+      File.Fprintf("%s,%s,%.1f,%.1f,%d,%d,%.1f,%.1f,%.1f\n",\
+        (*iter).obtid,(*iter).ddatetime,(*iter).t/10.0,(*iter).p/10.0,\
+        (*iter).u,(*iter).wd,(*iter).wf/10.0,(*iter).r/10.0,(*iter).vis/10.0);
+    }
+  }
+
+  // 关闭文件
+  File. CloseAndRename();
+
+  // 写日志提示生成文件成功
+  logfile.Write("生成数据文件%s成功， 数据生成时间%s, 记录条数%d.\n", strFileName, strddatatime, vsurfdata.size());
+
+  return true;
 }
