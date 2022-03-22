@@ -6,6 +6,8 @@
 #include "_public.h"
 
 // class CLogFile;
+// class CCmdStr;
+// class CFile;
 
 // 日志类一般会将其定义为全局的变量
 CLogFile logfile;
@@ -24,10 +26,33 @@ struct st_stcode
 };
 
 // 定义一个存放站点参数的容器
-vector<st_stcode> vstcode;
+vector<struct st_stcode> vstcode;
 
 // 把气象站点参数加载到参数容器中的函数
 bool LoadSTCode(const char * inifile);
+
+// 全国气象站点分钟观测数据结构
+struct st_surfdata
+{
+  char obtid[11];      // 站点代码。
+  char ddatetime[21];  // 数据时间：格式yyyymmddhh24miss
+  int  t;              // 气温：单位，0.1摄氏度。
+  int  p;              // 气压：0.1百帕。
+  int  u;              // 相对湿度，0-100之间的值。
+  int  wd;             // 风向，0-360之间的值。
+  int  wf;             // 风速：单位0.1m/s
+  int  r;              // 降雨量：0.1mm。
+  int  vis;            // 能见度：0.1米。
+};
+
+// 然后声明一个用于存放观测数据的容器(存放全国气象站点分钟观测数据的容器)
+vector<struct st_surfdata> vsurfdata;
+
+// 生成气象观测数据的函数
+// 这个函数是根据一个容器再加上一个随机数生成另外一个容器，这种函数的运行不会失败，所以不需要返回值
+void CrtSurfData();
+
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
 {
@@ -76,11 +101,16 @@ int main(int argc, char *argv[])
     return -1;
   }
 
+  // 模拟生成全国气象站点分钟观测数据，存放在vsurfdata容器中。
+  CrtSurfData();
+
 
   logfile.Write("crtsurfdata 运行结束。\n");
 
   return 0;
 }
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // 把气象站点参数加载到参数容器中的函数
 bool LoadSTCode(const char * inifile)
@@ -113,11 +143,11 @@ bool LoadSTCode(const char * inifile)
       break;
     }
 
-    // 这行代码主要是为了处理站点数据文件中第一行的无效数据（因为这行数据没有用","分割，所以拆分结果是1，就不会是6，所以这行拆分数据就给忽略就好
-    if(CmdStr.CmdCount() != 6) continue;
-
     // 把读取到的每一行进行拆分, 拆分出来的数据保存到strBuffer中，按","进行拆分，然后删除拆分出来的字符串的前后的空格
     CmdStr.SplitToCmd(strBuffer, ",", true);
+
+    // 这行代码主要是为了处理站点数据文件中第一行的无效数据（因为这行数据没有用","分割，所以拆分结果是1，就不会是6，所以这行拆分数据就给忽略就好
+    if(CmdStr.CmdCount() != 6) continue;
 
     // 把站点参数的每一个数据项保存到站点参数结构体中
     CmdStr.GetValue(0, stcode.provname, 30);    // 省代码（省名
@@ -135,4 +165,40 @@ bool LoadSTCode(const char * inifile)
   // 关闭文件(这里不用关闭，在CFile类的析构函数中有文件关闭代码，因为是栈上定义的变量，所以超出作用域会自动释放)
 
   return true;
+}
+
+// 生成气象观测数据的函数,将生成的测试数据存放在 vsurfdata容器中
+// 这个函数是根据一个容器再加上一个随机数生成另外一个容器，这种函数的运行不会失败，所以不需要返回值
+void CrtSurfData()
+{
+  // 生成随机数种子
+  srand(time(0));
+
+  // 获取当前时间，作为观测时间
+  char strddatatime[21];
+  memset(strddatatime, 0, sizeof(strddatatime));
+  LocalTime(strddatatime, "yyyymmddhh24miss");
+
+  struct st_surfdata stsurfdata;
+
+  // 遍历站点参数容器vscode
+  for(auto iter = vstcode.begin(); iter != vstcode.end(); ++iter)
+  {
+    // 初始化结构体
+    memset(&stsurfdata, 0, sizeof(st_surfdata));
+    // 用随机数填充分钟观测数据的结构体
+    strncpy(stsurfdata.obtid, (*iter).obtid, 10);        // 站点代码
+    strncpy(stsurfdata.ddatetime, strddatatime, 14);    // 数据时间，格式yyyymmddhh24miss
+    stsurfdata.t=rand()%351;       // 气温：单位，0.1摄氏度
+    stsurfdata.p=rand()%265+10000; // 气压：0.1百帕
+    stsurfdata.u=rand()%100+1;     // 相对湿度，0-100之间的值。
+    stsurfdata.wd=rand()%360;      // 风向，0-360之间的值。
+    stsurfdata.wf=rand()%150;      // 风速：单位0.1m/s
+    stsurfdata.r=rand()%16;        // 降雨量：0.1mm
+    stsurfdata.vis=rand()%5001+100000;  // 能见度：0.1米
+
+    // 把观测数据的结构体放入vsurfdata容器中
+    vsurfdata.push_back(stsurfdata);
+
+  }
 }
