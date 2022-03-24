@@ -55,5 +55,12 @@ int main(int argc, char* argv[])
     // 只要这个指针变量他的内存地址没有问题，那么shmdt这个函数肯定不会失败，所以这里不用判断他的返回值
     shmdt(stpid);
 
+    // 删除共享内存
+    // 如果删除失败，返回-1
+    if(shmctl(shmid, IPC_RMID, 0) == -1)
+    {
+        printf("shmctl(stpid, IPC_RMID, 0) faild \n");
+    }
+
     return 0;
 }
