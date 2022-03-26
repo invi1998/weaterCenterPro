@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     // 第三个参数，信号量的标志 如果是二值信号量的化就是 SEM_UNDO 也是缺省的 
     // （所以可以看出，我们提供的这个CSEM 信号量类，默认情况下是一个二值信号量）
     // 如果信号量已经存在，获取信号信号量，如果不存在，则创建它并初始化为value
-    if(sem.init(0x5005) == false)
+    if(sem.init(0x5005) == false)   // 注意这里，把信号量的初始值设置为10
     {
         printf("sem.init(0x5005) faild \n");
         return -1;
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     // 在加锁之前将当前时间 和 信号量的值显示出来
     printf("start  time = %ld， value = %d \n", time(0), sem.value());
 
-    sem.P();        // 加锁
+    sem.P();        // 加锁，P操作这里设置为-5
 
     // 在加锁之后将当前时间 和 信号量的值显示出来
     printf("start  time = %ld， value = %d \n", time(0), sem.value());
@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
     stpid->pid = getpid();              // 把当前进程的id赋给共享内存的pid成员
     // strcpy(stpid->name, argv[0]);       // 然后把当前进程（程序）的名称赋给共享内存的name成员
     strcpy(stpid->name, argv[1]);       // 然后把当前进程（程序）的第一个参数赋给共享内存的name成员
+    sleep(300);
 
     // 在赋值之后我们也把共享内存里面的东西读出来
     printf("pid = %d， name = %s \n", stpid->pid, stpid->name);
@@ -77,11 +78,10 @@ int main(int argc, char* argv[])
     // 在解锁之前将当前时间 和 信号量的值显示出来
     printf("end  time = %ld， value = %d \n", time(0), sem.value());
 
-    sem.V();        // 解锁
+    sem.V();        // 解锁，然后V操作我们设置为2
 
     // 在解锁之后将当前时间 和 信号量的值显示出来
-    printf("end  time = %ld， value = %d \n", time(0), sem.value());
-
+    printf("end1  time = %ld， value = %d \n", time(0), sem.value());
 
     // 把共享内存从当前进程中分离
     // shmdt 这个函数他的参数就是上面这里这个指针变量 stpid 指向的内存地址
