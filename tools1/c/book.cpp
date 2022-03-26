@@ -21,6 +21,21 @@ struct st_pinfo
     time_t atime;   // 最后一次心跳时间，用整数表示
 };
 
+class PActive
+{
+private:
+    CSEM m_sem;             // 用于给共享内存加锁的信号量ID
+    int m_shmid;            // 共享内存id
+    int m_pos;              // 当前进程在共享内存中的地址空间（或者下标）
+    struct st_pinfo *m_shm; // 指向共享内存的地址空间
+
+public:
+    PActive();              // 初始化成员变量
+    bool AddPInfo(const int timeout, const char* pname);        // 把当前进程的心跳信息写入到共享内存中
+    bool UptATime();        // 更新共享内存中当前进程的心跳时间
+    ~PActive();             // 从共享内存中删除当前进程的心跳记录
+};
+
 int main(int argc, char* argv[])
 {
     if(argc < 2)
@@ -122,4 +137,31 @@ int main(int argc, char* argv[])
     shmdt(m_shm);
 
     return 0;
+}
+
+
+// 初始化成员变量
+PActive::PActive()
+{
+    m_shmid = -1;       // 共享内存id
+    m_pos = -1;         // 当前进程在共享内存组中的位置
+    m_shm = 0;          // 指向共享内存的地址空间（首地址）
+}
+
+// 把当前进程的心跳信息加入共享内存中
+bool PActive::AddPInfo(const int timeout, const char* pname)
+{
+
+}
+
+// 更新共享内存中当前进程的心跳时间
+bool PActive::UptATime()
+{
+
+}
+
+// 从共享内存中删除当前进程的心跳记录
+PActive::~PActive()
+{
+    
 }
