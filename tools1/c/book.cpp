@@ -5,7 +5,7 @@ void EXIT(int sig)
 {
     printf("sig = %d \n", sig);
 
-    exit(0);
+    if(sig == 2) exit(0);
 }
 
 CPActive Active;
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 
     while(true)
     {
-        Active.UptATime();
+        // Active.UptATime();
 
         sleep(10);
     }
