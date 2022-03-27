@@ -12,6 +12,12 @@
 // 日志类一般会将其定义为全局的变量
 CLogFile logfile;
 
+// 定义为全局的对象，解决exit函数不会调用局部对象的析构函数的问题
+CFile File;
+
+// 心跳类
+CPActive PActive;
+
 // 气象站点参数数据eg（结构体）
 // 省   站号  站名 纬度   经度  海拔高度
 // 安徽,58015,砀山,34.27,116.2,44.2
@@ -57,6 +63,9 @@ void CrtSurfData();
 // 生成数据文件
 bool CrtSurfFile(const char* outpath, const char* datafmt);
 
+// 信号处理函数
+void EXIT(int sig);
+
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
@@ -79,6 +88,9 @@ int main(int argc, char *argv[])
     // 只提示正确方法还不够，这里给一个例子说明
     printf("Example:/project/idc1/bin/crtsurfdata /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc/crtsurfdata.log xml,json,csv\n\n");
 
+    printf("        /project/idc1/bin/crtsurfdata /project/idc1/ini/stcode.ini /tmp/idc/surfdata /log/idc/crtsurfdata.log xml,json,csv 20210710123000\n");
+    printf("        /project/tools1/bin/procctl 60 /project/idc1/bin/crtsurfdata /project/idc1/ini/stcode.ini /tmp/idc/surfdata /log/idc/crtsurfdata.log xml,json,csv\n\n\n");
+
     // 然后对这些参数做一个详细的打印说明
     printf("全国气象站点参数文件 : inifile \n");
     printf("生成的测试气象数据存放的目录 : outpath\n");
@@ -89,6 +101,13 @@ int main(int argc, char *argv[])
     // 程序退出
     return -1;
   }
+
+  // 增加信号处理代码
+  // 设置信号，在shell状态下可以用 "kill + 进程号" 正常终止一些进程
+  // 但是不要用 "kill -9 + 进程号"强行终止
+  CloseIOAndSignal(true);   // 关闭信号和io 这个关闭io和信号的代码不能放在打开日志文件的代码之后，因为它在关闭io的时候会将日志文件的描述符给还回去
+  signal(SIGINT, EXIT);    // 信号2处理函数
+  signal(SIGTERM, EXIT);   // 信号15处理函数
 
   // 打开日志
   if(logfile.Open(argv[3]) == false)
@@ -101,6 +120,10 @@ int main(int argc, char *argv[])
 
   // 往日志中写入内容
   logfile.Write("crtsurfdata 开始运行。\n");
+
+  // 进程心跳
+  PActive.AddPInfo(20, "crtsurfdata");
+  // 然后因为该进程运行时间很短（0.1s都不到），所以就不用更新心跳了（只需要每次调度程序定时调度写入该进程的心跳即可）
 
   // 业务代码
   // 把气象站点参数加载到参数容器中的函数
@@ -225,7 +248,6 @@ void CrtSurfData()
 // 生成数据文件 把容器vsurfdata中的全国气象站点的分钟观测数据写入文件
 bool CrtSurfFile(const char* outpath, const char* datafmt)
 {
-  CFile File;
   // 拼接生成数据的文件名 例如：/tmp/surfdata/SURF_ZH_20220322180345_2243.CSV
   char strFileName[301];
 
@@ -325,4 +347,11 @@ bool CrtSurfFile(const char* outpath, const char* datafmt)
   logfile.Write("生成数据文件%s成功， 数据生成时间%s, 记录条数%d.\n", strFileName, strddatatime, vsurfdata.size());
 
   return true;
+}
+
+// 信号处理函数(程序退出的 2 和 15 号信号)
+void EXIT(int sig)
+{
+  logfile.Write("程序退出，sig=%d\n\n", sig);
+  exit(0);
 }
