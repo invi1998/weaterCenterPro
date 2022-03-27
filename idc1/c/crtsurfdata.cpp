@@ -66,13 +66,15 @@ int main(int argc, char *argv[])
   // 生成的测试气象数据存放的目录 outpath
   // 存放的日志 logfile
   // 指定生成的数据保存为什么格式 datafmt
+  // 增加一个可选参数，该参数表示生成测试数据的历史时间
 
 
   // 所以这个程序有4个参数，那么argc的值应该为5
-  if(argc!=5)
+  if(argc != 5 && argc != 6)
   {
-    // 不等于4表示程序运行的方法不正确(这里打印提示改程序需要这3个参数)
-    printf("Using:./crtsurfdata inifile outpath logfile datafmt\n");
+    // 增加一个可选的历史时间参数
+    // 不等于4表示程序运行的方法不正确(这里打印提示改程序需要这4个参数)
+    printf("Using:./crtsurfdata inifile outpath logfile datafmt [datatime]\n");
 
     // 只提示正确方法还不够，这里给一个例子说明
     printf("Example:/project/idc1/bin/crtsurfdata /project/idc1/ini/stcode.ini /tmp/surfdata /log/idc/crtsurfdata.log xml,json,csv\n\n");
@@ -81,7 +83,8 @@ int main(int argc, char *argv[])
     printf("全国气象站点参数文件 : inifile \n");
     printf("生成的测试气象数据存放的目录 : outpath\n");
     printf("日志存放路径 : logfile\n");
-    printf("指定生成的数据保存为什么格式 : datafmt\n\n");
+    printf("指定生成的数据保存为什么格式 : datafmt\n");
+    printf("这是一个可选参数，表示生成指定时间的数据和文件： datatime\n\n\n");
 
     // 程序退出
     return -1;
@@ -104,6 +107,18 @@ int main(int argc, char *argv[])
   if(LoadSTCode(argv[1]) == false)
   {
     return -1;
+  }
+
+  memset(strddatatime, 0, sizeof(strddatatime));
+  if(argc == 5)
+  {
+    // 获取当前时间，作为观测时间
+    LocalTime(strddatatime, "yyyymmddhh24miss");
+  }
+  else
+  {
+    // 如果提供了历史时间这个参数，就使用历史时间这个参数
+    STRCPY(strddatatime, sizeof(strddatatime), argv[5]);
   }
 
   // 模拟生成全国气象站点分钟观测数据，存放在vsurfdata容器中。
@@ -182,10 +197,6 @@ void CrtSurfData()
 {
   // 生成随机数种子
   srand(time(0));
-
-  // 获取当前时间，作为观测时间
-  memset(strddatatime, 0, sizeof(strddatatime));
-  LocalTime(strddatatime, "yyyymmddhh24miss");
 
   struct st_surfdata stsurfdata;
 
@@ -306,6 +317,9 @@ bool CrtSurfFile(const char* outpath, const char* datafmt)
 
   // 关闭文件
   File. CloseAndRename();
+
+  // 如果程序提供了历史时间这个参数，表示想要生成这个历史时间的测试数据，那么这里生成的文件的时间属性也要更改
+  UTime(strFileName, strddatatime);     // 修改文件的时间属性
 
   // 写日志提示生成文件成功
   logfile.Write("生成数据文件%s成功， 数据生成时间%s, 记录条数%d.\n", strFileName, strddatatime, vsurfdata.size());

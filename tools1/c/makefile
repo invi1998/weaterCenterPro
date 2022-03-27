@@ -18,4 +18,4 @@ checkproc:checkproc.cpp
 	cp checkproc ../bin/.
 
 clean:
-	rm -f procctl
+	rm -f procctl checkproc
