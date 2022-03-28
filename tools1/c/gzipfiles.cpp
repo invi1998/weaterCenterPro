@@ -24,11 +24,18 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    // 关闭全部信号和io(输入输出)
+    // 关闭全部信号和io(输入输出)                                                                                       
+    // 设置信号,在shell状态下可用 "kill + 进程号" 正常终止些进程。
+    // 但请不要用 "kill -9 +进程号" 强行终止。
+    // CloseIOAndSignal(true);
+    signal(SIGINT, EXIT);
+    signal(SIGTERM, EXIT);
 
     // 获取文件超时的时间点（本程序要压缩历史文件，历史文件怎么定义？）
     // 这里可以认为一个小时之前的文件属于历史文件，或者认为3天之前的属于历史文件，这里总有一个时间点，这里我们就获取这个时间点
     // 这个时间点，应该是由main函数的参数指定的
+    char strTimeOut[21];
+    LocalTime(strTimeOut, "yyyy-mm-dd hh:24:ss", atof(argv[3]))
 
     // 打开目录，CDir.OpenDir()。打开目录可以使用开发框架里这个CDir类的OpenDir方法来打开目录
 
