@@ -1,4 +1,4 @@
-#include "_public.cpp"
+#include "_public.h"
 
 // 程序退出和信号2,15的处理函数
 void EXIT(int sig);
@@ -35,14 +35,29 @@ int main(int argc, char* argv[])
     // 这里可以认为一个小时之前的文件属于历史文件，或者认为3天之前的属于历史文件，这里总有一个时间点，这里我们就获取这个时间点
     // 这个时间点，应该是由main函数的参数指定的
     char strTimeOut[21];
-    LocalTime(strTimeOut, "yyyy-mm-dd hh:24:ss", atof(argv[3]))
+    LocalTime(strTimeOut, "yyyy-mm-dd hh24:mi:ss", 0 - (int)(atof(argv[3])*24*60*60));
 
     // 打开目录，CDir.OpenDir()。打开目录可以使用开发框架里这个CDir类的OpenDir方法来打开目录
+    CDir Dir;
+    // 打开文件的目录，打开文件的匹配规则，最多打开10000个文件，需要遍历子目录，对文件不排序
+    if(Dir.OpenDir(argv[1], argv[2], 10000, true, false) == false)
+    {
+        printf("Dir.OpenDir(%s, %s, 10000, true, false) faild \n", argv[1], argv[2]);
+        return -1;
+    }
 
     // 然后就是遍历目录中的文件名
     while(true)
     {
         // 在循环中调用 CDir.ReadDir()方法读取每个文件的信息（包括文件名，文件时间）
+        if(Dir.ReadDir() == false)
+        {
+            // 读取失败，表示没有文件了（读完了）
+            break;
+        }
+
+        printf("DirName=%s, FileName=%s, FullFileName=%s, FileSize=%d, ModifyTime=%s, CreateTime=%s, AccessTime=%s\n",\
+                Dir.m_DirName, Dir.m_FileName, Dir.m_FullFileName, Dir.m_FileSize, Dir.m_ModifyTime, Dir.m_CreateTime, Dir.m_AccessTime);
 
         // 然后把文件的时间和超时时间点做比较，如果文件时间更早，就说明是一个历史文件，就需要进行压缩
 
@@ -56,5 +71,5 @@ void EXIT(int sig)
 {
     printf("程序退出， sig = %d\n\n", sig);
 
-    exit();
+    exit(0);
 }
