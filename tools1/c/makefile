@@ -7,7 +7,7 @@ PUBcpp = /project/public/_public.cpp
 # 编译参数
 CFLAGS = -g
 
-all:procctl checkproc gzipfiles
+all:procctl checkproc gzipfiles deletefiles
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp
@@ -21,5 +21,9 @@ gzipfiles:gzipfiles.cpp
 	g++ $(CFLAGS) -o gzipfiles gzipfiles.cpp $(PUBINCL) $(PUBcpp) -lm -lc
 	cp gzipfiles ../bin/.
 
+deletefiles:deletefiles.cpp
+	g++ $(CFLAGS) -o deletefiles deletefiles.cpp $(PUBINCL) $(PUBcpp) -lm -lc
+	cp deletefiles ../bin/.
+
 clean:
-	rm -f procctl checkproc gzipfiles
+	rm -f procctl checkproc gzipfiles deletefiles
