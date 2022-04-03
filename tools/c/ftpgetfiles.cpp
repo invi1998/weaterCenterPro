@@ -232,7 +232,7 @@ bool _ftpgetfiles()
     return true;
 }
 
-// 把ftp.nlist()方法获取到的list文件加载到vfilelist中
+// 把ftp.nlist()方法获取到的list文件加载到vfilelist容器中
 bool LoadListFile()
 {
     vfilelist.clear();
