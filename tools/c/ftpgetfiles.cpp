@@ -373,7 +373,7 @@ bool LoadListFile()
                 return false;
             }
             // 将文件时间拷贝进mtime中
-            strcpy(stfileinfo.mtime, ftp.m_time);
+            strcpy(stfileinfo.mtime, ftp.m_mtime);
         }
 
         vfilelist2.push_back(stfileinfo);
@@ -467,7 +467,7 @@ bool WriteToOKFile()
 
     for(auto iter = vfilelist3.begin(); iter != vfilelist3.end(); ++iter)
     {
-        File.Fprintf("%s\n", (*iter).filename);
+        File.Fprintf("<filename>%s</filename><mtime>%s</mtime>\n", (*iter).filename, (*iter).mtime);
     }
 
     return true;
@@ -484,7 +484,7 @@ bool AppendToOkFile(struct st_fileinfo *stfilename)
         return false;
     }
 
-    File.Fprintf("%s\n", stfilename->filename);
+    File.Fprintf("<filename>%s</filename><mtime>%s</mtime>\n", stfilename->filename, stfilename->mtime);
 
     return true;
 }
