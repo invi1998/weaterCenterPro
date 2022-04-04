@@ -18,6 +18,8 @@ struct st_arg
   char localpath[301];     // 本地文件存放的目录。
   char matchname[101];     // 待下载文件匹配的规则。
   char listfilename[301];  // 下载前列出服务器文件名的文件。
+  int  ptype;              // 下载后服务器文件的处理方式：1-什么也不做；2-删除；3-备份。
+  char remotepathbak[301]; // 下载后服务器文件的备份目录。
 } starg;
 
 // 文件信息结构体
@@ -112,7 +114,7 @@ void _help()
     printf("\n");
     printf("Using:/project/tools/bin/ftpgetfiles logfilename xmlbuffer\n\n");
 
-    printf("Sample:/project/tools/bin/procctl 30 /project/tools/bin/ftpgetfiles /log/idc/ftpgetfiles_surfdata.log \"<host>127.0.0.1:21</host><mode>1</mode><username>wucz</username><password>wuczpwd</password><localpath>/idcdata/surfdata</localpath><remotepath>/tmp/idc/surfdata</remotepath><matchname>SURF_ZH*.XML,SURF_ZH*.CSV</matchname><listfilename>/idcdata/ftplist/ftpgetfiles_surfdata.list</listfilename>\"\n\n\n");
+    printf("Sample:/project/tools/bin/procctl 30 /project/tools/bin/ftpgetfiles /log/idc/ftpgetfiles_surfdata.log \"<host>127.0.0.1:21</host><mode>1</mode><username>wucz</username><password>wuczpwd</password><localpath>/idcdata/surfdata</localpath><remotepath>/tmp/idc/surfdata</remotepath><matchname>SURF_ZH*.XML,SURF_ZH*.CSV</matchname><listfilename>/idcdata/ftplist/ftpgetfiles_surfdata.list</listfilename><ptype>3</ptype><remotepathbak>/tmp/idc/surfdatabak</remotepathbak>\"\n\n\n");
 
     printf("本程序是通用的功能模块，用于把远程ftp服务器的文件下载到本地目录。\n");
     printf("logfilename是本程序运行的日志文件。\n");
@@ -125,47 +127,57 @@ void _help()
     printf("<localpath>/idcdata/surfdata</localpath> 本地文件存放的目录。\n");
     printf("<matchname>SURF_ZH*.XML,SURF_ZH*.CSV</matchname> 待下载文件匹配的规则。"\
          "不匹配的文件不会被下载，本字段尽可能设置精确，不建议用*匹配全部的文件。\n");
-    printf("<listfilename>/idcdata/ftplist/ftpgetfiles_surfdata.list</listfilename> 下载前列出服务器文件名的文件。\n\n\n");
+    printf("<listfilename>/idcdata/ftplist/ftpgetfiles_surfdata.list</listfilename> 下载前列出服务器文件名的文件。\n");
+    printf("<ptype>1</ptype> 文件下载成功后，远程服务器文件的处理方式：1-什么也不做；2-删除；3-备份，如果为3，还要指定备份的目录。\n");
+    printf("<remotepathbak>/tmp/idc/surfdatabak</remotepathbak> 文件下载成功后，服务器文件的备份目录，此参数只有当ptype=3时才有效。\n\n\n");
+
 }
 
 bool _xmltoarg(const char* args)
 {
     memset(&starg, 0, sizeof(struct st_arg));
+
     GetXMLBuffer(args, "host", starg.host, 30);      // 远程ftp服务器的IP和端口
     if(strlen(starg.host) == 0)
     {
         logfile.Write("host is null\n");
         return false;
     }
+
     GetXMLBuffer(args, "mode", &starg.mode);       // 传输模式，1-被动模式，2-主动模式，缺省采用被动模式。
     if(starg.mode != 2)
     {
         starg.mode = 1;     // 也就是说，如果没有指定ftp传输模式，那就默认都指定为被动模式
     }
+
     GetXMLBuffer(args, "username", starg.username, 30);      // 远程服务器ftp的用户名。
     if(strlen(starg.username) == 0)
     {
         logfile.Write("username is null\n");
         return false;
     }
+
     GetXMLBuffer(args, "password", starg.password, 30);       // 远程服务器ftp的密码。
     if(strlen(starg.password) == 0)
     {
         logfile.Write("password is null\n");
         return false;
     }
+
     GetXMLBuffer(args, "remotepath", starg.remotepath, 300);      // 远程服务器存放文件的目录
     if(strlen(starg.remotepath) == 0)
     {
         logfile.Write("remotepath is null\n");
         return false;
     }
+
     GetXMLBuffer(args, "localpath", starg.localpath, 300);      // 本地文件存放的目录
     if(strlen(starg.localpath) == 0)
     {
         logfile.Write("localpath is null\n");
         return false;
     }
+
     GetXMLBuffer(args, "matchname", starg.matchname, 100);     // 待下载文件匹配的规则
     if(strlen(starg.matchname) == 0)
     {
@@ -177,6 +189,21 @@ bool _xmltoarg(const char* args)
     if (strlen(starg.listfilename)==0)
     {
         logfile.Write("listfilename is null.\n");
+        return false;
+    }
+
+    // 下载后服务器文件的处理方式：1-什么也不做；2-删除；3-备份。
+    GetXMLBuffer(args,"ptype",&starg.ptype);   
+    if ( (starg.ptype!=1) && (starg.ptype!=2) && (starg.ptype!=3) )
+    {
+        logfile.Write("ptype is error.\n");
+        return false;
+    }
+
+    GetXMLBuffer(args,"remotepathbak",starg.remotepathbak,300); // 下载后服务器文件的备份目录。
+    if ( (starg.ptype==3) && (strlen(starg.remotepathbak)==0) )
+    {
+        logfile.Write("remotepathbak is null.\n");
         return false;
     }
 
@@ -227,7 +254,26 @@ bool _ftpgetfiles()
         }
 
         logfile.Write("OK\n");
+
+        // 文件下载完成后，服务端的动作 1-什么也不做；2-删除；3-备份，如果为3，还要指定备份的目录。
+        // 删除文件
+        if(starg.ptype == 2)
+        {
+            ftp.ftpdelete(strremotfilename);
+        }
+        // 转存到备份文件
+        if(starg.ptype == 3)
+        {
+            // 要备份文件，还需要先生成备份文件名
+            char strremotfilenamebak[301];
+            SNPRINTF(strremotfilenamebak, sizeof(strremotfilenamebak), 300, "%s/%s", starg.remotepathbak, (*iter).filename);
+
+            // 然后调用 ftp 的rename函数给备份文件改名
+            // 这里需要注意，在全部的ftp的函数中，远程的目录（strremotfilenamebak）如果不存在，是都不会创建的，只有本地目录不存在才会创建，所以需要事先在ftp服务器上创建好备份目录
+            ftp.ftprename(strremotfilename, strremotfilenamebak);
+        }
     }
+
 
     return true;
 }
