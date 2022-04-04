@@ -5,6 +5,9 @@ CLogFile logfile;
 
 Cftp ftp;
 
+// 进程心跳对象
+CPActive PActive;
+
 // 程序运行参数结构体
 struct st_arg
 {
@@ -20,6 +23,8 @@ struct st_arg
   char remotepathbak[301]; // 下载后服务器文件的备份目录。
   char okfilename[301];    // 已下载成功文件名清单。
   bool checkmtime;         // 是否需要检查服务端文件的时间，true-需要，false-不需要，缺省为false。
+  int  timeout;            // 进程心跳的超时时间。
+  char pname[51];          // 进程名，建议用"ftpgetfiles_后缀"的方式。
 } starg;
 
 // 文件信息结构体
@@ -78,7 +83,7 @@ int main(int argc, char *argv[])
     // 处理程序的退出信号
     // 设置信号,在shell状态下可用 "kill + 进程号" 正常终止些进程。
     // 但请不要用 "kill -9 +进程号" 强行终止。
-    // CloseIOAndSignal(); 
+    CloseIOAndSignal();
     signal(SIGINT,EXIT);
     signal(SIGTERM,EXIT);
 
@@ -94,6 +99,9 @@ int main(int argc, char *argv[])
     {
         return -1;
     }
+
+    // 把进程的心跳信息写入共享内存
+    PActive.AddPInfo(starg.timeout, starg.pname);
 
 
     // 进入ftp服务存放文件的目录
@@ -128,7 +136,7 @@ void _help()
     printf("\n");
     printf("Using:/project/tools/bin/ftpgetfiles logfilename xmlbuffer\n\n");
 
-    printf("Sample:/project/tools/bin/procctl 30 /project/tools/bin/ftpgetfiles /log/idc/ftpgetfiles_surfdata.log \"<host>127.0.0.1:21</host><mode>1</mode><username>wucz</username><password>wuczpwd</password><localpath>/idcdata/surfdata</localpath><remotepath>/tmp/idc/surfdata</remotepath><matchname>SURF_ZH*.XML,SURF_ZH*.CSV</matchname><listfilename>/idcdata/ftplist/ftpgetfiles_surfdata.list</listfilename><ptype>1</ptype><remotepathbak>/tmp/idc/surfdatabak</remotepathbak><okfilename>/idcdata/ftplist/ftpgetfiles_surfdata.xml</okfilename><checkmtime>true</checkmtime>\"\n\n\n");
+    printf("Sample:/project/tools/bin/procctl 30 /project/tools/bin/ftpgetfiles /log/idc/ftpgetfiles_surfdata.log \"<host>127.0.0.1:21</host><mode>1</mode><username>invi</username><password>wuczpwd</password><localpath>/idcdata/surfdata</localpath><remotepath>/tmp/idc/surfdata</remotepath><matchname>SURF_ZH*.XML,SURF_ZH*.CSV</matchname><listfilename>/idcdata/ftplist/ftpgetfiles_surfdata.list</listfilename><ptype>1</ptype><remotepathbak>/tmp/idc/surfdatabak</remotepathbak><okfilename>/idcdata/ftplist/ftpgetfiles_surfdata.xml</okfilename><checkmtime>true</checkmtime><timeout>80</timeout><pname>ftpgetfiles_surfdata</pname>\"\n\n\n");
 
     printf("本程序是通用的功能模块，用于把远程ftp服务器的文件下载到本地目录。\n");
     printf("logfilename是本程序运行的日志文件。\n");
@@ -145,8 +153,10 @@ void _help()
     printf("<ptype>1</ptype> 文件下载成功后，远程服务器文件的处理方式：1-什么也不做；2-删除；3-备份，如果为3，还要指定备份的目录。\n");
     printf("<remotepathbak>/tmp/idc/surfdatabak</remotepathbak> 文件下载成功后，服务器文件的备份目录，此参数只有当ptype=3时才有效。\n");
     printf("<okfilename>/idcdata/ftplist/ftpgetfiles_surfdata.xml</okfilename> 已下载成功文件名清单，此参数只有当ptype=1时才有效。\n");
-    printf("<checkmtime>true</checkmtime> 是否需要检查服务端文件的时间，true-需要，false-不需要，此参数只有当ptype=1时才有效，缺省为false。\n\n\n");
-  
+    printf("<checkmtime>true</checkmtime> 是否需要检查服务端文件的时间，true-需要，false-不需要，此参数只有当ptype=1时才有效，缺省为false。\n");
+    printf("<timeout>80</timeout> 下载文件超时时间，单位：秒，视文件大小和网络带宽而定。\n");
+    printf("<pname>ftpgetfiles_surfdata</pname> 进程名，尽可能采用易懂的、与其它进程不同的名称，方便故障排查。\n\n\n");
+
 }
 
 bool _xmltoarg(const char* args)
@@ -233,6 +243,21 @@ bool _xmltoarg(const char* args)
     // 是否需要检查服务端文件的时间，true-需要，false-不需要，此参数只有当ptype=1时才有效，缺省为false。
     GetXMLBuffer(args,"checkmtime",&starg.checkmtime);
 
+    
+    GetXMLBuffer(args,"timeout",&starg.timeout);   // 进程心跳的超时时间。
+    if (starg.timeout==0)
+    {
+        logfile.Write("timeout is null.\n");
+        return false;
+    }
+
+    GetXMLBuffer(args,"pname",starg.pname,50);     // 进程名。
+    if (strlen(starg.pname)==0)
+    {
+        logfile.Write("pname is null.\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -254,12 +279,17 @@ bool _ftpgetfiles()
         return false;
     }
 
+    // 如果服务端文件数量众多，那么这里可能会很耗时。在这里更新一下心跳
+    PActive.UptATime();
+
     // 把ftp.nlist()方法获取到的list文件加载到容器vfilelist2中.
     if(LoadListFile() == false)
     {
         logfile.Write("LoadListFile() faild\n");
         return false;
     }
+
+    PActive.UptATime();     // 更新进程心跳
 
     // 如果是增量下载
     if(starg.ptype == 1)
@@ -281,6 +311,8 @@ bool _ftpgetfiles()
 
     }
 
+    PActive.UptATime();     // 更新进程心跳
+
     // 遍历容器vfilelist
 
     // 在调用get方法之前，需要将文件的全路径拼接出来(分别是服务器的文件名 和 本地文件名)
@@ -300,6 +332,9 @@ bool _ftpgetfiles()
         }
 
         logfile.Write("OK\n");
+
+        // 每次下载完一个文件后也需要更新一下心跳
+        PActive.UptATime();     // 更新进程心跳
 
         // 如果ptype == 1,把下载成功的文件记录追加到okfilename文件中
         if(starg.ptype == 1)
