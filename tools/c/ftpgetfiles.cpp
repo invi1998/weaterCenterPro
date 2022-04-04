@@ -231,7 +231,7 @@ bool _xmltoarg(const char* args)
     }
 
     // 是否需要检查服务端文件的时间，true-需要，false-不需要，此参数只有当ptype=1时才有效，缺省为false。
-    GetXMLBuffer(strxmlbuffer,"checkmtime",&starg.checkmtime);
+    GetXMLBuffer(args,"checkmtime",&starg.checkmtime);
 
     return true;
 }
@@ -363,6 +363,19 @@ bool LoadListFile()
         // 判断文件名是否匹配我们传递进来的文件名匹配字符串，如果不匹配，说明不是我们想要的文件，就不放进容器中
         if(MatchStr(stfileinfo.filename, starg.matchname) == false) continue;
 
+        // 当文件下载模式为增量下载，并且需要进行文件时间校验（校验是否有文件被更改），就需要将文件时间读进结构体中
+        if(starg.ptype == 1 && starg.checkmtime == true)
+        {
+            // 获取服务端文件的时间
+            if(ftp.mtime(stfileinfo.filename) == false)
+            {
+                logfile.Write("ftp.mtime(%s) faild \n", stfileinfo.filename);
+                return false;
+            }
+            // 将文件时间拷贝进mtime中
+            strcpy(stfileinfo.mtime, ftp.m_time);
+        }
+
         vfilelist2.push_back(stfileinfo);
     }
 
@@ -383,6 +396,8 @@ bool LoadOKFile()
         return true;
    }
 
+   char strbuffer[501];
+
    struct st_fileinfo stfileinfo;
 
     while(true)
@@ -390,7 +405,11 @@ bool LoadOKFile()
         memset(&stfileinfo, 0, sizeof(struct st_fileinfo));
 
         // 读取每一行，然后第三个参数设置为true，表示删除每行字符串结尾的换行和空格
-        if(File.Fgets(stfileinfo.filename, 300, true) == false) break;
+        // 将每一行xml读取到strbuffer中
+        if(File.Fgets(strbuffer, 300, true) == false) break;
+        // 然后将strbuffer解析到对应的结构体变量中
+        GetXMLBuffer(strbuffer, "filename", stfileinfo.filename);
+        GetXMLBuffer(strbuffer, "mtime", stfileinfo.mtime);
 
         vfilelist1.push_back(stfileinfo);
     }
@@ -413,7 +432,10 @@ bool CompVector()
         // 在容器filelist1中查找vfilelist2(iter1)的记录
         for(iter2 = vfilelist1.begin(); iter2 != vfilelist1.end(); ++iter2)
         {
-            if(strcmp((*iter1).filename, (*iter2).filename) == 0)
+            // 这里为什么不分开讨论说如果不需要比较文件时间的情况呢？
+            // 因为如果不需要比较文件时间，那么文件时间都将为空，所以就算不比较文件时间的情况，这里进行文件时间比较也不会影响比较结果
+            if((strcmp((*iter1).filename, (*iter2).filename) == 0) &&   // 比较文件名
+                strcmp((*iter1).mtime, (*iter2).mtime) == 0)            // 比较文件时间
             {
                 // 容器2中找到容器1中相同的文件名，那就把这条文件信息放入到容器3中
                 vfilelist3.push_back(*iter1);
