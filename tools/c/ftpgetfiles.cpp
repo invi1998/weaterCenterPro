@@ -250,7 +250,7 @@ bool _ftpgetfiles()
         if(ftp.get(strremotfilename, strlocalfilename) == false)
         {
             logfile.Write("ftp.get(%s, %s) faild\n", strremotfilename, strlocalfilename);
-            break;
+            return false;
         }
 
         logfile.Write("OK\n");
