@@ -331,7 +331,7 @@ bool _ftpgetfiles()
             return false;
         }
 
-        logfile.Write("OK\n");
+        logfile.Write("下载成功\n");
 
         // 每次下载完一个文件后也需要更新一下心跳
         PActive.UptATime();     // 更新进程心跳
