@@ -259,7 +259,11 @@ bool _ftpgetfiles()
         // 删除文件
         if(starg.ptype == 2)
         {
-            ftp.ftpdelete(strremotfilename);
+            if(ftp.ftpdelete(strremotfilename) == false)
+            {
+                logfile.Write("文件%s删除失败!请检查用户权限或者文件路径\n", strremotfilename);
+                return false;
+            }
         }
         // 转存到备份文件
         if(starg.ptype == 3)
@@ -270,7 +274,11 @@ bool _ftpgetfiles()
 
             // 然后调用 ftp 的rename函数给备份文件改名
             // 这里需要注意，在全部的ftp的函数中，远程的目录（strremotfilenamebak）如果不存在，是都不会创建的，只有本地目录不存在才会创建，所以需要事先在ftp服务器上创建好备份目录
-            ftp.ftprename(strremotfilename, strremotfilenamebak);
+            if(ftp.ftprename(strremotfilename, strremotfilenamebak) == false)
+            {
+                logfile.Write("文件[%s]备份（移动）到[%s]失败!请检查用户权限或者文件路径\n", strremotfilename, strremotfilenamebak);
+                return false;
+            }
         }
     }
 
