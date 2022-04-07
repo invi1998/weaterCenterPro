@@ -13,41 +13,73 @@
  * author：invi
 */
 #include "../_public.h"
+
+CLogFile logfile;   // 服务程序运行日志对象
+CTcpServer TcpServer;   // tcp服务端类对象
  
 int main(int argc,char *argv[])
 {
-  if (argc!=2)
+  if (argc!=3)
   {
-    printf("Using:./demo08 port\nExample:./demo08 5005\n\n"); return -1;
+    printf("Using:./demo10 port logfile\nExample:./demo10 5005 /tmp/demo10.log\n\n"); return -1;
   }
 
-  CTcpServer TcpServer;
+  // 忽略子进程退出信号，解决僵尸进程
+  signal(SIGCHLD, SIG_IGN);
+
+  if(logfile.Open(argv[2], "a+") == false)
+  {
+    printf("logfile.Open(%s, \"a+\") faild\n", argv[2]);
+    return -1;
+  }
+
 
   // 服务端初始化。
   if (TcpServer.InitServer(atoi(argv[1]))==false)
   {
-    printf("TcpServer.InitServer(%s) failed.\n",argv[1]); return -1;
+    logfile.Write("TcpServer.InitServer(%s) failed.\n",argv[1]);
+    return -1;
   }
 
-  // 等待客户端的连接请求。
-  if (TcpServer.Accept()==false)
-  {
-    printf("TcpServer.Accept() failed.\n"); return -1;
-  }
-
-  printf("客户端（%s）已连接。\n",TcpServer.GetIP());
-
-  char buffer[102400];
-
-  // 与客户端通讯，接收客户端发过来的报文后，回复ok。
   while (1)
   {
-    memset(buffer,0,sizeof(buffer));
-    if (TcpServer.Read(buffer)==false) break; // 接收客户端的请求报文。
-    printf("接收：%s\n",buffer);
+    // 等待客户端的连接请求。
+    if (TcpServer.Accept()==false)
+    {
+      logfile.Write("TcpServer.Accept() failed.\n"); return -1;
+    }
 
-    strcpy(buffer,"ok");
-    if (TcpServer.Write(buffer)==false) break; // 向客户端发送响应结果。
-    printf("发送：%s\n",buffer);
+    logfile.Write("客户端（%s）已连接。\n",TcpServer.GetIP());
+
+    if(fork() > 0)
+    {
+      TcpServer.CloseClient();    // 父进程中关闭连接套接字（client 客户端套接字）
+      logfile.Write(" 父进程 listenfd = %d, connfd = %d \n", TcpServer.m_listenfd, TcpServer.m_connfd);
+      continue;   // 父进程继续回到accept
+    }
+
+    TcpServer.CloseListen();    // 然后再子进程中关闭监听套接字
+
+    logfile.Write(" 子进程 listenfd = %d, connfd = %d \n", TcpServer.m_listenfd, TcpServer.m_connfd);
+
+
+    // 下面这些流程就是子进程的分支（子进程走下来处理业务）
+    char buffer[102400];
+
+    // 与客户端通讯，接收客户端发过来的报文后，回复ok。
+    while (1)
+    {
+      memset(buffer,0,sizeof(buffer));
+      if (TcpServer.Read(buffer)==false) break; // 接收客户端的请求报文。
+      logfile.Write("接收：%s\n",buffer);
+
+      strcpy(buffer,"ok");
+      if (TcpServer.Write(buffer)==false) break; // 向客户端发送响应结果。
+      logfile.Write("发送：%s\n",buffer);
+    }
+
+    return 0;
+    
   }
+  
 }
