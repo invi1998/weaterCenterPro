@@ -16,6 +16,9 @@
 
 CLogFile logfile;   // 服务程序运行日志对象
 CTcpServer TcpServer;   // tcp服务端类对象
+
+void FathEXIT(int sig);   // 父进程退出函数
+void ChildEXIT(int sig);  // 子进程退出函数
  
 int main(int argc,char *argv[])
 {
@@ -24,8 +27,12 @@ int main(int argc,char *argv[])
     printf("Using:./demo10 port logfile\nExample:./demo10 5005 /tmp/demo10.log\n\n"); return -1;
   }
 
-  // 忽略子进程退出信号，解决僵尸进程
-  signal(SIGCHLD, SIG_IGN);
+  // 关闭全部的信号和输入输出。
+  // 设置信号,在shell状态下可用 "kill + 进程号" 正常终止些进程
+  // 但请不要用 "kill -9 +进程号" 强行终止
+  CloseIOAndSignal();
+  signal(SIGINT,FathEXIT);
+  signal(SIGTERM,FathEXIT);
 
   if(logfile.Open(argv[2], "a+") == false)
   {
@@ -46,7 +53,8 @@ int main(int argc,char *argv[])
     // 等待客户端的连接请求。
     if (TcpServer.Accept()==false)
     {
-      logfile.Write("TcpServer.Accept() failed.\n"); return -1;
+      logfile.Write("TcpServer.Accept() failed.\n");
+      FathEXIT(-1);
     }
 
     logfile.Write("客户端（%s）已连接。\n",TcpServer.GetIP());
@@ -57,6 +65,10 @@ int main(int argc,char *argv[])
       logfile.Write(" 父进程 listenfd = %d, connfd = %d \n", TcpServer.m_listenfd, TcpServer.m_connfd);
       continue;   // 父进程继续回到accept
     }
+
+    // 设置子进程的退出信号
+    signal(SIGINT,ChildEXIT);
+    signal(SIGTERM,ChildEXIT);
 
     TcpServer.CloseListen();    // 然后再子进程中关闭监听套接字
 
@@ -78,8 +90,38 @@ int main(int argc,char *argv[])
       logfile.Write("发送：%s\n",buffer);
     }
 
-    return 0;
+    ChildEXIT(0);
     
   }
   
+}
+
+void FathEXIT(int sig)   // 父进程退出函数
+{
+  // 忽略信号,防止干扰
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  // 先关闭监听套接字
+  TcpServer.CloseListen();
+
+  // 然后给所有的子进程发送退出信号
+  kill(0, 15);
+
+  // 然后退出
+  logfile.Write("父进程(%d)退出, sig = %d！\n", getpid(), sig);
+  exit(0);
+}
+
+
+void ChildEXIT(int sig)  // 子进程退出函数
+{
+  // 忽略信号,防止干扰
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  // 关闭当前客户端的套接字
+  TcpServer.CloseClient();
+
+  logfile.Write("子进程(%d)退出, sig = %d!\n", getpid(), sig);
+  // 然后退出
+  exit(0);
 }
