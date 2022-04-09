@@ -66,6 +66,9 @@ int main(int argc,char *argv[])
     return -1;
   }
 
+  // 把进程心跳写入共享内存
+  // PActive.AddPInfo(starg.timeout, starg.pname);
+
   // 向服务端发起连接请求。
   if (TcpClient.ConnectToServer(argv[1],atoi(argv[2]))==false)
   {
@@ -79,8 +82,13 @@ int main(int argc,char *argv[])
     EXIT(-1);
   }
 
+  for(int i = 0; i < 5; ++i)
+  {
+    if(ActiveTest() == false) break;
+    sleep(1);
+  }
 
-  return 0;
+  EXIT(0);
 
 }
 
@@ -97,6 +105,7 @@ bool ActiveTest()    // 心跳函数
     return false;
   }
 
+  // 超时时间设置为20s
   if(TcpClient.Read(strrecvbuffer, 20) == false)    // 接收服务端的回应报文
   {
     return false;
@@ -118,6 +127,7 @@ bool Login(const char *argv)    // 登陆业务
     return false;
   }
 
+  // 超时时间设置为20s
   if(TcpClient.Read(strsendbuffer, 20) == false)
   {
     return false;

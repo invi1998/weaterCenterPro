@@ -28,11 +28,17 @@ struct st_arg
 void FathEXIT(int sig);   // 父进程退出函数
 void ChildEXIT(int sig);  // 子进程退出函数
 
-bool _main(const char *strrecv, char *strsend);   // 业务处理子函数
+char strrecvbuffer[1024];   // 发送报文的buffer。
+char strsendbuffer[1024];   // 接收报文的buffer。
 
-bool srv000(const char *strrecv, char *strsend);    // 处理心跳报文
+// 把xml解析到参数starg结构中。
+bool _xmltoarg(char *strxmlbuffer);
 
-bool srv001(const char *strrecv, char *strsend);    // 登陆业务
+// 登录业务处理函数。
+bool ClientLogin();
+
+// 上传文件的主函数。
+void RecvFilesMain();
 
 int main(int argc,char *argv[])
 {
@@ -73,44 +79,33 @@ int main(int argc,char *argv[])
 
     logfile.Write("客户端（%s）已连接。\n",TcpServer.GetIP());
 
-    if(fork() > 0)
+    // if(fork() > 0)
+    // {
+    //   TcpServer.CloseClient();    // 父进程中关闭连接套接字（client 客户端套接字）
+    //   continue;   // 父进程继续回到accept
+    // }
+
+    // // 设置子进程的退出信号
+    // signal(SIGINT,ChildEXIT);
+    // signal(SIGTERM,ChildEXIT);
+
+    // TcpServer.CloseListen();    // 然后再子进程中关闭监听套接字
+
+    // 子进程与客户端进行通信,处理业务
+
+    // 处理登录客户端的登录报文
+    if(ClientLogin() == false)
     {
-      TcpServer.CloseClient();    // 父进程中关闭连接套接字（client 客户端套接字）
-      logfile.Write(" 父进程 listenfd = %d, connfd = %d \n", TcpServer.m_listenfd, TcpServer.m_connfd);
-      continue;   // 父进程继续回到accept
+      ChildEXIT(-1);
     }
 
-    // 设置子进程的退出信号
-    signal(SIGINT,ChildEXIT);
-    signal(SIGTERM,ChildEXIT);
-
-    TcpServer.CloseListen();    // 然后再子进程中关闭监听套接字
-
-    logfile.Write(" 子进程 listenfd = %d, connfd = %d \n", TcpServer.m_listenfd, TcpServer.m_connfd);
-
-
-    // 下面这些流程就是子进程的分支（子进程走下来处理业务）
-    char strrecvbuffer[1024];
-    char strsendbuffer[1024];
-
-    // 与客户端通讯，接收客户端发过来的报文后，回复ok。
-    while (1)
+    // 如果clienttype == 1,调用上传文件的子函数
+    if(starg.clienttype == 1)
     {
-      memset(strrecvbuffer,0,sizeof(strrecvbuffer));
-      memset(strsendbuffer,0,sizeof(strsendbuffer));
-
-      if (TcpServer.Read(strrecvbuffer, atoi(argv[3]))==false) break; // 接收客户端的请求报文。
-      logfile.Write("接收：%s\n",strrecvbuffer);
-
-      // 业务处理子函数
-      if(_main(strrecvbuffer, strsendbuffer) == false)
-      {
-        ChildEXIT(-1);
-      }
-
-      if (TcpServer.Write(strsendbuffer)==false) break; // 向客户端发送响应结果。
-      logfile.Write("发送：%s\n",strsendbuffer);
+      RecvFilesMain();
     }
+
+    // 如果clienttype==2,调用下载文件的子函数
 
     ChildEXIT(0);
     
@@ -148,55 +143,94 @@ void ChildEXIT(int sig)  // 子进程退出函数
   exit(0);
 }
 
-bool _main(const char *strrecv, char *strsend)   // 业务处理子函数
+// 把xml解析到参数starg结构中
+bool _xmltoarg(char *strxmlbuffer)
 {
-  // 解析xml获取服务代码
-  int srvcode;
-  GetXMLBuffer(strrecv, "srvcode", &srvcode);
+  memset(&starg,0,sizeof(struct st_arg));
 
-  // 处理相应的业务
-  switch (srvcode)
+  // 不需要对参数做合法性判断，客户端已经判断过了。
+  GetXMLBuffer(strxmlbuffer,"clienttype",&starg.clienttype);
+  GetXMLBuffer(strxmlbuffer,"ptype",&starg.ptype);
+  GetXMLBuffer(strxmlbuffer,"clientpath",starg.clientpath);
+  GetXMLBuffer(strxmlbuffer,"andchild",&starg.andchild);
+  GetXMLBuffer(strxmlbuffer,"matchname",starg.matchname);
+  GetXMLBuffer(strxmlbuffer,"srvpath",starg.srvpath);
+
+  GetXMLBuffer(strxmlbuffer,"timetvl",&starg.timetvl);
+  if (starg.timetvl>30) starg.timetvl=30;
+
+  GetXMLBuffer(strxmlbuffer,"timeout",&starg.timeout);
+  if (starg.timeout<50) starg.timeout=50;
+
+  GetXMLBuffer(strxmlbuffer,"pname",starg.pname,50);
+  strcat(starg.pname,"_srv");
+
+  return true;
+}
+
+// 登录（这里的登录不是常规意义上的登陆，而是解析客户端发送的登陆报文，这个报文里面有服务端运行所需要的参数）
+bool ClientLogin()
+{
+  memset(strrecvbuffer,0,sizeof(strrecvbuffer));
+  memset(strsendbuffer,0,sizeof(strsendbuffer));
+
+  if (TcpServer.Read(strrecvbuffer,20)==false)
   {
-  case 0:
-    // 处理心跳报文
-    srv000(strrecv, strsend);
-    break;
-
-  case 1:
-    // 处理登陆服务
-    srv001(strrecv, strsend);
-    break;
-  
-  default:
-    // 业务代码不合法
-    logfile.Write("业务代码（%d）不合法\n", srvcode);
-    return false;
+    logfile.Write("TcpServer.Read() failed.\n"); return false;
   }
+  logfile.Write("strrecvbuffer=%s\n",strrecvbuffer);
 
-  return true;
-}
+  // 解析客户端登录报文。
+  _xmltoarg(strrecvbuffer);
 
-bool srv000(const char *strrecv, char *strsend)    // 处理心跳报文
-{
-  strcpy(strsend, "<retcode>0</retcode><message>成功</message>");
-
-  return true;
-}
-
-bool srv001(const char *strrecv, char *strsend)    // 登陆业务
-{
-  char tel[12], password[21];
-  GetXMLBuffer(strrecv, "tel", tel, 11);
-  GetXMLBuffer(strrecv, "password", password, 20);
-
-  if(strcmp(tel, "12345678901") == 0 && strcmp(password, "12345") == 0)
+  if(starg.clienttype != 1 && starg.clienttype != 2)
   {
-    strcpy(strsend, "<retcode>0</retcode><message>登陆成功</message>");
+    strcpy(strsendbuffer, "faild");
   }
   else
   {
-    strcpy(strsend, "<retcode>-1</retcode><message>账号密码错误</message>");
+    strcpy(strsendbuffer, "ok");
   }
 
+  if(TcpServer.Write(strsendbuffer) == false)
+  {
+    logfile.Write("TcpServer.Write() failed.\n"); return false;
+  }
+
+  logfile.Write("%s login %s.\n",TcpServer.GetIP(),strsendbuffer);
+  
   return true;
+
+}
+
+// 上传文件的主函数。
+void RecvFilesMain()
+{
+  while (true)
+  {
+    memset(strsendbuffer,0,sizeof(strsendbuffer));
+    memset(strrecvbuffer,0,sizeof(strrecvbuffer));
+
+    // 接收客户端的报文。
+    // 第二个参数的取值必须大于starg.timetvl，小于starg.timeout。
+    if (TcpServer.Read(strrecvbuffer,starg.timetvl+10)==false)
+    {
+      logfile.Write("TcpServer.Read() failed.\n"); return;
+    }
+    logfile.Write("strrecvbuffer=%s\n",strrecvbuffer);
+
+    // 处理心跳报文。
+    if (strcmp(strrecvbuffer,"<activetest>ok</activetest>")==0)
+    {
+      strcpy(strsendbuffer,"ok");
+      logfile.Write("strsendbuffer=%s\n",strsendbuffer);
+      if (TcpServer.Write(strsendbuffer)==false)
+      {
+        logfile.Write("TcpServer.Write() failed.\n"); return;
+      }
+    }
+
+    // 处理上传文件的请求报文。
+  }
+
 }
