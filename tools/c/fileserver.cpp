@@ -235,7 +235,31 @@ void RecvFilesMain()
       }
     }
 
-    // 处理上传文件的请求报文。
+    // 处理上传文件的请求报文。上传报文他的开头10个字符一定是<filename>
+    if(strncmp(strrecvbuffer, "<filename>", 10) == 0)
+    {
+      // 解析上传文件请求报文的xml
+      char clientfilename[301];
+      char mtime[21];
+      int filesize = 0;
+
+      memset(clientfilename, 0, sizeof(clientfilename));
+      memset(mtime, 0, sizeof(mtime));
+
+      GetXMLBuffer(strrecvbuffer, "filename", clientfilename, 300);
+      GetXMLBuffer(strrecvbuffer, "mtime", mtime, 20);
+      GetXMLBuffer(strrecvbuffer, "size", &filesize);
+
+      // 接收上传文件的内容
+      SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><result>ok</result>", clientfilename);
+
+      // 把接收结果返回给客户端
+      if(TcpServer.Write(strsendbuffer) == false)
+      {
+        logfile.Write("TcpServer.Write(%s) failed\n", strsendbuffer);
+      }
+
+    }
   }
 
 }

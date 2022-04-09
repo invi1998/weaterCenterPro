@@ -43,6 +43,8 @@ char strrecvbuffer[1024];
 // 解析xml到参数starg中
 bool _xmltoarg(char * strxmlbuffer);
 
+// 文件上传函数
+bool _tcpputfiles();
  
 int main(int argc,char *argv[])
 {
@@ -220,6 +222,51 @@ bool _xmltoarg(char *strxmlbuffer)
 
   GetXMLBuffer(strxmlbuffer,"pname",starg.pname,50);
   if (strlen(starg.pname)==0) { logfile.Write("pname is null.\n"); return false; }
+
+  return true;
+}
+
+// 文件上传函数,执行一次文件上传
+bool _tcpputfiles()
+{
+  CDir Dir;
+  // 调用OpenDir()打开starg.clientpath目录
+  if(Dir.OpenDir(starg.clientpath, starg.matchname, 10000, starg.andchild) == false)
+  {
+    logfile.Write("Dir.OpenDir(%s, %s, 10000, true) failed\n", starg.clientpath, starg.matchname);
+    return false;
+  }
+
+  while(1)
+  {
+    memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
+    memset(strsendbuffer, 0, sizeof(strsendbuffer));
+    
+    // 遍历目录中的每个文件，调用ReadDir()获取一个文件名
+    if(Dir.ReadDir() == false) break;
+
+    // 然后把文件名，文件修改时间，文件大小组成报文，发送给对端
+    SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><mtime>%s</mtime><size>%d</size>", Dir.m_FullFileName, Dir.m_ModifyTime, Dir.m_FileSize);
+
+    logfile.Write("strsendbuffer: %s\n", strsendbuffer);
+    if(TcpClient.Write(strsendbuffer) == false)
+    {
+      logfile.Write("TcpClient.Write(%s) failed\n", strsendbuffer);
+      return false;
+    }
+
+    // 把文件内容发送给对端
+
+    // 接收对端的确认报文
+    if(TcpClient.Read(strrecvbuffer) == false)
+    {
+      logfile.Write("TcpClient.Read(%s) failed\n", strrecvbuffer);
+      return false;
+    }
+    logfile.Write("strrecvbuffer:%s\n", strrecvbuffer);
+
+    // 删除或者转存到备份目录
+  }
 
   return true;
 }
