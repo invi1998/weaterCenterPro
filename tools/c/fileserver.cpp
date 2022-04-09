@@ -183,6 +183,7 @@ bool ClientLogin()
   // 解析客户端登录报文。
   _xmltoarg(strrecvbuffer);
 
+  // 如果客户端发送的报文中，clienttype既不是1也不是2就是非法报文，合法报文回复OK，非法报文回复faild
   if(starg.clienttype != 1 && starg.clienttype != 2)
   {
     strcpy(strsendbuffer, "faild");
@@ -197,6 +198,7 @@ bool ClientLogin()
     logfile.Write("TcpServer.Write() failed.\n"); return false;
   }
 
+  // 把登陆结果记录下来
   logfile.Write("%s login %s.\n",TcpServer.GetIP(),strsendbuffer);
   
   return true;
@@ -212,7 +214,10 @@ void RecvFilesMain()
     memset(strrecvbuffer,0,sizeof(strrecvbuffer));
 
     // 接收客户端的报文。
-    // 第二个参数的取值必须大于starg.timetvl，小于starg.timeout。
+    // 第二个参数（超时时间）的取值必须大于starg.timetvl，小于starg.timeout。
+    // starg.timetvl扫描本地目录文件的时间间隔，单位：秒。
+    // starg.timeout进程心跳的超时时间
+    // 也就是你不能在它还在扫描文件的间隔期间就判定为超时，也不能已经超时超过了进程的心跳时间了还不认为是超时
     if (TcpServer.Read(strrecvbuffer,starg.timetvl+10)==false)
     {
       logfile.Write("TcpServer.Read() failed.\n"); return;
