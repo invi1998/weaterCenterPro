@@ -40,6 +40,9 @@ bool ClientLogin();
 // 上传文件的主函数。
 void RecvFilesMain();
 
+// 接收上传文件内容的函数
+bool RecvFile(const int socketfd, char *filename, const char *mtime, int filesize);
+
 int main(int argc,char *argv[])
 {
   if (argc!=3)
@@ -178,7 +181,7 @@ bool ClientLogin()
   {
     logfile.Write("TcpServer.Read() failed.\n"); return false;
   }
-  logfile.Write("strrecvbuffer=%s\n",strrecvbuffer);
+  // logfile.Write("strrecvbuffer=%s\n",strrecvbuffer);
 
   // 解析客户端登录报文。
   _xmltoarg(strrecvbuffer);
@@ -222,13 +225,13 @@ void RecvFilesMain()
     {
       logfile.Write("TcpServer.Read() failed.\n"); return;
     }
-    logfile.Write("strrecvbuffer=%s\n",strrecvbuffer);
+    // logfile.Write("strrecvbuffer=%s\n",strrecvbuffer);
 
     // 处理心跳报文。
     if (strcmp(strrecvbuffer,"<activetest>ok</activetest>")==0)
     {
       strcpy(strsendbuffer,"ok");
-      logfile.Write("strsendbuffer=%s\n",strsendbuffer);
+      // logfile.Write("strsendbuffer=%s\n",strsendbuffer);
       if (TcpServer.Write(strsendbuffer)==false)
       {
         logfile.Write("TcpServer.Write() failed.\n"); return;
@@ -250,16 +253,101 @@ void RecvFilesMain()
       GetXMLBuffer(strrecvbuffer, "mtime", mtime, 20);
       GetXMLBuffer(strrecvbuffer, "size", &filesize);
 
+      // 客户端和服务端文件的目录是不一样的，一下代码用于生成服务端的文件名
+      // 把文件名中的clientpath替换为srvpath。要注意第三个参数
+      //       注意：
+      // 1、如果str2比str1要长，替换后str会变长，所以必须保证str有足够的空间，否则内存会溢出。
+      // 2、如果str2中包含了str1的内容，且bloop为true，这种做法存在逻辑错误，UpdateStr将什么也不做
+      char serverfilename[301];
+      memset(serverfilename, 0, sizeof(serverfilename));
+      strcpy(serverfilename, clientfilename);
+      UpdateStr(serverfilename, starg.clientpath, starg.srvpath, false);
+
       // 接收上传文件的内容
-      SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><result>ok</result>", clientfilename);
+      logfile.Write("recv %s(%d) ... ", serverfilename, filesize);
+      if(RecvFile(TcpServer.m_connfd, serverfilename, mtime, filesize) == true)
+      {
+        logfile.WriteEx("ok\n");
+        SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><result>ok</result>", clientfilename);
+      }
+      else
+      {
+        logfile.WriteEx("failed\n");
+        SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><result>failed</result>", clientfilename);
+      }
 
       // 把接收结果返回给客户端
       if(TcpServer.Write(strsendbuffer) == false)
       {
         logfile.Write("TcpServer.Write(%s) failed\n", strsendbuffer);
+        return;
       }
 
     }
   }
 
+}
+
+// 接收上传文件内容的函数
+bool RecvFile(const int socketfd, char *filename, const char *mtime, int filesize)
+{
+  // 生成临时文件名，等待这个文件全部接收完毕之后，再改名为正式文件
+  char strfilenametmp[301];
+  SNPRINTF(strfilenametmp, sizeof(strfilenametmp), 300, "%s.tmp", filename);
+
+  int totalbytes = 0;   // 已经接收文件的总字节数
+  int onread = 0;       // 本次打算接收的总字节数
+  char buffer[1000];    // 接收文件内容的缓冲区
+  FILE *fp = nullptr;
+
+  // 创建临时文件
+  if((fp = FOPEN(strfilenametmp, "wb")) == nullptr)
+  {
+    return false;
+  }
+
+  while(1)
+  {
+    memset(buffer, 0, sizeof(buffer));
+
+    // 计算本次应该接收的字节数
+    if(filesize - totalbytes > 1000) onread = 1000;
+    else onread = filesize - totalbytes;
+
+    // 接收文件内容
+    if(Readn(socketfd, buffer, onread) == false)
+    {
+      fclose(fp);
+      return false;
+    }
+
+    // 把接收到的内容写入文件
+    fwrite(buffer, 1, onread, fp);
+
+    // 计算已经接收到的总字节数，如果文件已经接收完毕，跳出循环
+    totalbytes = totalbytes + onread;
+
+    if(totalbytes == filesize)
+    {
+      break;
+    }
+
+  }
+
+  // 关闭临时文件
+  if(fp != nullptr)
+  {
+    fclose(fp);
+  }
+
+  // 重置文件时间(注意：这里如果没有重置文件时间，那么文件时间就是传输这次文件的时间， 文件传输时间是没有意义的，文件原始时间更有意义)
+  UTime(strfilenametmp, mtime);
+
+  // 把临时文件RENAME为正式文件
+  if(RENAME(strfilenametmp, filename) == false)
+  {
+    return false;
+  }
+
+  return true;
 }

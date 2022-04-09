@@ -45,6 +45,9 @@ bool _xmltoarg(char * strxmlbuffer);
 
 // 文件上传函数
 bool _tcpputfiles();
+
+// 文件内容上传函数
+bool SendFile(const int socketfd, char *filename, const int filesize);
  
 int main(int argc,char *argv[])
 {
@@ -108,7 +111,7 @@ bool ActiveTest()    // 心跳函数
   memset(strsendbuffer, 0, sizeof(strsendbuffer));
 
   SPRINTF(strsendbuffer, sizeof(strsendbuffer), "<activetest>ok</activetest>");
-  logfile.Write("发送：%s\n", strsendbuffer);
+  // logfile.Write("发送：%s\n", strsendbuffer);
 
   if(TcpClient.Write(strsendbuffer) == false)   // 向服务端发送心跳报文
   {
@@ -120,7 +123,7 @@ bool ActiveTest()    // 心跳函数
   {
     return false;
   }
-  logfile.Write("接收：%s\n", strrecvbuffer);
+  // logfile.Write("接收：%s\n", strrecvbuffer);
 
   return true;
 }
@@ -131,7 +134,7 @@ bool Login(const char *argv)    // 登陆业务
   memset(strsendbuffer, 0, sizeof(strsendbuffer));
 
   SPRINTF(strsendbuffer, sizeof(strsendbuffer), "%s<clienttype>1</clienttype>", argv);
-  logfile.Write("发送：%s\n", strsendbuffer);
+  // logfile.Write("发送：%s\n", strsendbuffer);
   if(TcpClient.Write(strsendbuffer) == false)   // 向服务端发送请求报文
   {
     return false;
@@ -142,7 +145,7 @@ bool Login(const char *argv)    // 登陆业务
   {
     return false;
   }
-  logfile.Write("接收：%s\n", strsendbuffer);
+  // logfile.Write("接收：%s\n", strsendbuffer);
 
   logfile.Write("登陆%s:%d成功\n", starg.ip, starg.port);
 
@@ -241,14 +244,14 @@ bool _tcpputfiles()
   {
     memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
     memset(strsendbuffer, 0, sizeof(strsendbuffer));
-    
+
     // 遍历目录中的每个文件，调用ReadDir()获取一个文件名
     if(Dir.ReadDir() == false) break;
 
     // 然后把文件名，文件修改时间，文件大小组成报文，发送给对端
     SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><mtime>%s</mtime><size>%d</size>", Dir.m_FullFileName, Dir.m_ModifyTime, Dir.m_FileSize);
 
-    logfile.Write("strsendbuffer: %s\n", strsendbuffer);
+    // logfile.Write("strsendbuffer: %s\n", strsendbuffer);
     if(TcpClient.Write(strsendbuffer) == false)
     {
       logfile.Write("TcpClient.Write(%s) failed\n", strsendbuffer);
@@ -256,6 +259,17 @@ bool _tcpputfiles()
     }
 
     // 把文件内容发送给对端
+    logfile.Write("send %s(%d) ... ", Dir.m_FullFileName, Dir.m_FileSize);
+    if(SendFile(TcpClient.m_connfd, Dir.m_FullFileName, Dir.m_FileSize) == true)
+    {
+      logfile.WriteEx("ok\n");
+    }
+    else
+    {
+      logfile.WriteEx("failed\n");
+      TcpClient.Close();
+      return false;
+    }
 
     // 接收对端的确认报文
     if(TcpClient.Read(strrecvbuffer) == false)
@@ -263,9 +277,64 @@ bool _tcpputfiles()
       logfile.Write("TcpClient.Read(%s) failed\n", strrecvbuffer);
       return false;
     }
-    logfile.Write("strrecvbuffer:%s\n", strrecvbuffer);
+    // logfile.Write("strrecvbuffer:%s\n", strrecvbuffer);
 
     // 删除或者转存到备份目录
+  }
+
+  return true;
+}
+
+// 文件内容上传函数
+bool SendFile(const int socketfd, char *filename, const int filesize)
+{
+  int onread = 0;   // 每次调用fread时打算读取的字节数
+  int bytes = 0;    // 每次调用fread时从文件中读取的字节数
+  char buffer[1000];    // 存放读取到数据的buffer
+  int totalbytes = 0;       // 从文件中以读取的文件字节总数
+  FILE *fp = nullptr;
+
+  // 打开文件，使用“rb"模式，因为我们要上传的文件除了文本数据，还有二进制的数据
+  if((fp = fopen(filename, "rb")) == nullptr)
+  {
+    return false;
+  }
+
+  // 同时如果文件比较大，不可能一次性把文件内容都读取出来，所以这里用一个循环，每次从文件中读取若干字节，然后发送
+  while(true)
+  {
+    memset(buffer, 0, sizeof(buffer));
+    // 计算本次应该读取的字节数，如果属于的数据超过1000字节，就打算读取1000字节。
+    if(filesize - totalbytes > 1000) onread = 1000;
+    else onread = filesize - totalbytes;
+
+    // 然后从文件里读取数据
+    bytes = fread(buffer, 1, onread, fp);   // bytes这个变量是成功读取的字节数
+
+    // 把读取到的数据发送给对端
+    if(bytes > 0)
+    {
+      // 注意这里发送使用框架里的Writen函数，如果使用TcpClient.Write函数，不一定能保证全部发送完毕
+      if(Writen(socketfd, buffer, bytes) == false)
+      {
+        fclose(fp);
+        return false;
+      }
+    }
+
+    // 计算文件已经读取的字节数，如果文件已经读取完毕，就跳出循环
+    totalbytes = totalbytes + bytes;
+
+    if(totalbytes == filesize)    // 如果以读取的字节数等于文件大小，就表示已经读取完该文件的所有数据
+    {
+      break;
+    }
+
+  }
+
+  if(fp != nullptr)
+  {
+    fclose(fp);     // 关闭文件指针
   }
 
   return true;
