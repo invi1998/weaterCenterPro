@@ -5,7 +5,8 @@
 #include "_public.h"
 
 CTcpClient TcpClient;   // 客户端tcp通讯对象
-CLogFile logfile;
+CLogFile logfile;   // 日志
+CPActive PActive;   // 进程心跳
 
 // 程序运行的参数结构体。
 struct st_arg
@@ -25,13 +26,23 @@ struct st_arg
 } starg;
 
 bool ActiveTest();    // tcp心跳
-bool Login();    // 登陆业务
+bool Login(const char* argv);    // 登陆业务
 
 // 程序退出和信号2、15的处理函数。
 void EXIT(int sig);
 
 // 程序帮助文档方法
 void _help();
+
+// 发送报文的buffer
+char strsendbuffer[1024];
+
+// 接收报文的buffer
+char strrecvbuffer[1024];
+
+// 解析xml到参数starg中
+bool _xmltoarg(char * strxmlbuffer);
+
  
 int main(int argc,char *argv[])
 {
@@ -42,17 +53,30 @@ int main(int argc,char *argv[])
   // 但请不要用 "kill -9 +进程号" 强行终止。
   CloseIOAndSignal(); signal(SIGINT,EXIT); signal(SIGTERM,EXIT);
 
+  // 打开日志文件
+  if(logfile.Open(argv[1],  "a+") == false)
+  {
+    printf("logfile.Open(%s,  \"a+\") faild", argv[1]);
+    return -1;
+  }
+
+  // 解析xml,得到程序的运行参数
+  if(_xmltoarg(argv[2]) == false)
+  {
+    return -1;
+  }
 
   // 向服务端发起连接请求。
   if (TcpClient.ConnectToServer(argv[1],atoi(argv[2]))==false)
   {
-    printf("TcpClient.ConnectToServer(%s,%s) failed.\n",argv[1],argv[2]); return -1;
+    logfile.Write("TcpClient.ConnectToServer(%s,%d) failed.\n",starg.ip, starg.port);
+    EXIT(-1);
   }
 
-  if(Login() == false)
+  if(Login(argv[2]) == false)
   {
-    printf("登陆失败！\n");
-    return -1;
+    logfile.Write("登陆失败！\n");
+    EXIT(-1);
   }
 
 
@@ -62,57 +86,45 @@ int main(int argc,char *argv[])
 
 bool ActiveTest()    // 心跳函数
 {
-  char buffer[1024];
-  
-  SPRINTF(buffer, sizeof(buffer), "<srvcode>0</srvcode>");
+  memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
+  memset(strsendbuffer, 0, sizeof(strsendbuffer));
 
-  printf("发送：%s。。。\n", buffer);
+  SPRINTF(strsendbuffer, sizeof(strsendbuffer), "<activetest>ok</activetest>");
+  logfile.Write("发送：%s\n", strsendbuffer);
 
-  if(TcpClient.Write(buffer) == false)
+  if(TcpClient.Write(strsendbuffer) == false)   // 向服务端发送心跳报文
   {
     return false;
   }
 
-  memset(buffer, 0, sizeof(buffer));
-  if(TcpClient.Read(buffer) == false)
+  if(TcpClient.Read(strrecvbuffer, 20) == false)    // 接收服务端的回应报文
   {
     return false;
   }
-  printf("接收：%s\n", buffer);
+  logfile.Write("接收：%s\n", strrecvbuffer);
 
   return true;
 }
 
-bool Login()    // 登陆业务
+bool Login(const char *argv)    // 登陆业务
 {
-  char buffer[1024];
-  
-  SPRINTF(buffer, sizeof(buffer), "<srvcode>1</srvcode><tel>12345678901</tel><password>12345</password>");
+  memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
+  memset(strsendbuffer, 0, sizeof(strsendbuffer));
 
-  printf("发送：%s。。。\n", buffer);
-
-  if(TcpClient.Write(buffer) == false)
+  SPRINTF(strsendbuffer, sizeof(strsendbuffer), "%s<clienttype>1</clienttype>", argv);
+  logfile.Write("发送：%s\n", strsendbuffer);
+  if(TcpClient.Write(strsendbuffer) == false)   // 向服务端发送请求报文
   {
     return false;
   }
 
-  memset(buffer, 0, sizeof(buffer));
-  if(TcpClient.Read(buffer) == false)
+  if(TcpClient.Read(strsendbuffer, 20) == false)
   {
     return false;
   }
+  logfile.Write("接收：%s\n", strsendbuffer);
 
-  // 解析服务端返回的xml
-  int iretcode = -1;
-  GetXMLBuffer(buffer, "retcode", &iretcode);
-
-  if(iretcode != 0)
-  {
-    printf("登陆失败！\n");
-    return false;
-  }
-
-  printf("登陆成功！\n");
+  logfile.Write("登陆%s:%d成功\n", starg.ip, starg.port);
 
   return true;
 }
@@ -120,10 +132,10 @@ bool Login()    // 登陆业务
 void _help()
 {
   printf("\n");
-  printf("Using:/project/tools1/bin/tcpputfiles logfilename xmlbuffer\n\n");
+  printf("Using:/project/tools/bin/tcpputfiles logfilename xmlbuffer\n\n");
 
-  printf("Sample:/project/tools1/bin/procctl 20 /project/tools1/bin/tcpputfiles /log/idc/tcpputfiles_surfdata.log \"<ip>192.168.174.132</ip><port>5005</port><ptype>1</ptype><clientpath>/tmp/tcp/surfdata1</clientpath><clientpathbak>/tmp/tcp/surfdata1bak</clientpathbak><andchild>true</andchild><matchname>*.XML,*.CSV</matchname><srvpath>/tmp/tcp/surfdata2</srvpath><timetvl>10</timetvl><timeout>50</timeout><pname>tcpputfiles_surfdata</pname>\"\n");
-  printf("       /project/tools1/bin/procctl 20 /project/tools1/bin/tcpputfiles /log/idc/tcpputfiles_surfdata.log \"<ip>192.168.174.132</ip><port>5005</port><ptype>2</ptype><clientpath>/tmp/tcp/surfdata1</clientpath><clientpathbak>/tmp/tcp/surfdata1bak</clientpathbak><andchild>true</andchild><matchname>*.XML,*.CSV</matchname><srvpath>/tmp/tcp/surfdata2</srvpath><timetvl>10</timetvl><timeout>50</timeout><pname>tcpputfiles_surfdata</pname>\"\n\n\n");
+  printf("Sample:/project/tools/bin/procctl 20 /project/tools/bin/tcpputfiles /log/idc/tcpputfiles_surfdata.log \"<ip>192.168.174.132</ip><port>5005</port><ptype>1</ptype><clientpath>/tmp/tcp/surfdata1</clientpath><clientpathbak>/tmp/tcp/surfdata1bak</clientpathbak><andchild>true</andchild><matchname>*.XML,*.CSV</matchname><srvpath>/tmp/tcp/surfdata2</srvpath><timetvl>10</timetvl><timeout>50</timeout><pname>tcpputfiles_surfdata</pname>\"\n");
+  printf("       /project/tools/bin/procctl 20 /project/tools/bin/tcpputfiles /log/idc/tcpputfiles_surfdata.log \"<ip>192.168.174.132</ip><port>5005</port><ptype>2</ptype><clientpath>/tmp/tcp/surfdata1</clientpath><clientpathbak>/tmp/tcp/surfdata1bak</clientpathbak><andchild>true</andchild><matchname>*.XML,*.CSV</matchname><srvpath>/tmp/tcp/surfdata2</srvpath><timetvl>10</timetvl><timeout>50</timeout><pname>tcpputfiles_surfdata</pname>\"\n\n\n");
 
   printf("本程序是数据中心的公共功能模块，采用tcp协议把文件发送给服务端。\n");
   printf("logfilename   本程序运行的日志文件。\n");
@@ -146,4 +158,50 @@ void EXIT(int sig)
   logfile.Write("程序退出，sig=%d\n\n",sig);
 
   exit(0);
+}
+
+// 把xml解析到参数starg结构
+bool _xmltoarg(char *strxmlbuffer)
+{
+  memset(&starg,0,sizeof(struct st_arg));
+
+  GetXMLBuffer(strxmlbuffer,"ip",starg.ip);
+  if (strlen(starg.ip)==0) { logfile.Write("ip is null.\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"port",&starg.port);
+  if ( starg.port==0) { logfile.Write("port is null.\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"ptype",&starg.ptype);
+  if ((starg.ptype!=1)&&(starg.ptype!=2)) { logfile.Write("ptype not in (1,2).\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"clientpath",starg.clientpath);
+  if (strlen(starg.clientpath)==0) { logfile.Write("clientpath is null.\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"clientpathbak",starg.clientpathbak);
+  if ((starg.ptype==2)&&(strlen(starg.clientpathbak)==0)) { logfile.Write("clientpathbak is null.\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"andchild",&starg.andchild);
+
+  GetXMLBuffer(strxmlbuffer,"matchname",starg.matchname);
+  if (strlen(starg.matchname)==0) { logfile.Write("matchname is null.\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"srvpath",starg.srvpath);
+  if (strlen(starg.srvpath)==0) { logfile.Write("srvpath is null.\n"); return false; }
+
+  GetXMLBuffer(strxmlbuffer,"timetvl",&starg.timetvl);
+  if (starg.timetvl==0) { logfile.Write("timetvl is null.\n"); return false; }
+
+  // 扫描本地目录文件的时间间隔，单位：秒。
+  // starg.timetvl没有必要超过30秒。
+  if (starg.timetvl>30) starg.timetvl=30;
+
+  // 进程心跳的超时时间，一定要大于starg.timetvl，没有必要小于50秒。
+  GetXMLBuffer(strxmlbuffer,"timeout",&starg.timeout);
+  if (starg.timeout==0) { logfile.Write("timeout is null.\n"); return false; }
+  if (starg.timeout<50) starg.timeout=50;
+
+  GetXMLBuffer(strxmlbuffer,"pname",starg.pname,50);
+  if (strlen(starg.pname)==0) { logfile.Write("pname is null.\n"); return false; }
+
+  return true;
 }
