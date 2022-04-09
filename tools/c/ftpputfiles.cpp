@@ -291,16 +291,16 @@ bool _ftpputfiles()
         SNPRINTF(strlocalfilename, sizeof(strlocalfilename), 300, "%s/%s", starg.localpath, (*iter).filename);  // 本地文件全路径文件名
 
         // 调用ftp.put()方法从客户端中上传文件到服务端
-        logfile.Write("put %s ... \n", strlocalfilename);
+        logfile.Write("put %s ... ", strlocalfilename);
 
         // 调用ftp.put()方法把文件上传到服务器，第三个参数填true，表示上传结束需要检查文件时间来确保文件上传成功
         if(ftp.put(strlocalfilename, strremotfilename, true) == false)
         {
-            logfile.Write("ftp.put(%s, %s) failed\n", strremotfilename, strlocalfilename);
+            logfile.WriteEx("failed\n");
             return false;
         }
 
-        logfile.Write("上传成功\n");
+        logfile.WriteEx("ok\n");
 
         // 每次上传完一个文件后也需要更新一下心跳
         PActive.UptATime();     // 更新进程心跳
