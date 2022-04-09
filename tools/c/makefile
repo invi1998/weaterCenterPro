@@ -7,7 +7,7 @@ PUBcpp = /project/public/_public.cpp
 # 编译参数
 CFLAGS = -g
 
-all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles
+all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp
@@ -35,5 +35,13 @@ ftpputfiles:ftpputfiles.cpp
 	g++ $(CFLAGS) -o ftpputfiles ftpputfiles.cpp $(PUBINCL) $(PUBcpp) /project/public/libftp.a /project/public/_ftp.cpp -lm -lc -no-pie
 	cp ftpputfiles ../bin/.
 
+tcpputfiles:tcpputfiles.cpp
+	g++ $(CFLAGS) -o tcpputfiles tcpputfiles.cpp $(PUBINCL) $(PUBcpp) -lm -lc
+	cp tcpputfiles ../bin/.
+
+fileserver:fileserver.cpp
+	g++ $(CFLAGS) -o fileserver fileserver.cpp $(PUBINCL) $(PUBcpp) -lm -lc
+	cp fileserver ../bin/.
+
 clean:
-	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles
+	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver
