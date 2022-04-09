@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     // 打开日志文件
     if(logfile.Open(argv[1], "a+") == false)
     {
-        printf("logfile.Open(argv[1], \"a+\") faild \n");
+        printf("logfile.Open(argv[1], \"a+\") failed \n");
         return -1;
     }
 

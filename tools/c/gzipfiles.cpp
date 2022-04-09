@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
     // 打开文件的目录，打开文件的匹配规则，最多打开10000个文件，需要遍历子目录，对文件不排序
     if(Dir.OpenDir(argv[1], argv[2], 10000, true, false) == false)
     {
-        printf("Dir.OpenDir(%s, %s, 10000, true, false) faild \n", argv[1], argv[2]);
+        printf("Dir.OpenDir(%s, %s, 10000, true, false) failed \n", argv[1], argv[2]);
         return -1;
     }
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                printf("gzip %s faild.\n", Dir.m_FullFileName);
+                printf("gzip %s failed.\n", Dir.m_FullFileName);
             }
         }
 

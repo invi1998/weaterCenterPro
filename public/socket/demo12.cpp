@@ -45,7 +45,7 @@ int main(int argc,char *argv[])
 
   if(logfile.Open(argv[2], "a+") == false)
   {
-    printf("logfile.Open(%s, \"a+\") faild\n", argv[2]);
+    printf("logfile.Open(%s, \"a+\") failed\n", argv[2]);
     return -1;
   }
 

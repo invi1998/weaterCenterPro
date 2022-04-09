@@ -56,7 +56,7 @@ int main(int argc,char *argv[])
   // 打开日志文件
   if(logfile.Open(argv[1],  "a+") == false)
   {
-    printf("logfile.Open(%s,  \"a+\") faild", argv[1]);
+    printf("logfile.Open(%s,  \"a+\") failed", argv[1]);
     return -1;
   }
 
@@ -82,10 +82,18 @@ int main(int argc,char *argv[])
     EXIT(-1);
   }
 
-  for(int i = 0; i < 5; ++i)
+  // 登陆成功后
+  while (1)
   {
-    if(ActiveTest() == false) break;
-    sleep(1);
+    // 调用文件上传的主函数，执行一次文件上传任务
+    if(_tcpputfiles() == false)
+    {
+      logfile.Write("_tcpputfiles() failed\n");
+      EXIT(-1);
+    }
+
+    sleep(starg.timetvl);     // 休息这么多秒，也就是每隔timetvl就检测一次文件，看是否有新文件需要上传
+    if(ActiveTest() == false) break;    // 休息结束发送一次心跳
   }
 
   EXIT(0);

@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     // 进入ftp服务存放文件的目录
     if(ftp.login(starg.host, starg.username, starg.password, starg.mode) == false)
     {
-        logfile.Write("ftp.login(%s, %s, %s) faild\n", starg.host, starg.username, starg.password, starg.mode);
+        logfile.Write("ftp.login(%s, %s, %s) failed\n", starg.host, starg.username, starg.password, starg.mode);
         return -1;
     }
     logfile.Write("登陆%s成功\n", starg.host);
@@ -252,7 +252,7 @@ bool _ftpputfiles()
     // 把localpath目录下的文件加载到容器vfilelist2中.
     if(LoadLocaltFile() == false)
     {
-        logfile.Write("LoadLocaltFile() faild\n");
+        logfile.Write("LoadLocaltFile() failed\n");
         return false;
     }
 
@@ -296,7 +296,7 @@ bool _ftpputfiles()
         // 调用ftp.put()方法把文件上传到服务器，第三个参数填true，表示上传结束需要检查文件时间来确保文件上传成功
         if(ftp.put(strlocalfilename, strremotfilename, true) == false)
         {
-            logfile.Write("ftp.put(%s, %s) faild\n", strremotfilename, strlocalfilename);
+            logfile.Write("ftp.put(%s, %s) failed\n", strremotfilename, strlocalfilename);
             return false;
         }
 
@@ -356,7 +356,7 @@ bool LoadLocaltFile()
     // 建议使用deletefiles程序即使清理本地目录中的历史文件
     if(Dir.OpenDir(starg.localpath, starg.matchname) == false)
     {
-       logfile.Write("Dir.OpenDir(%s, %s) faild\n", starg.localpath, starg.matchname);
+       logfile.Write("Dir.OpenDir(%s, %s) failed\n", starg.localpath, starg.matchname);
        return false;
     }   
 
@@ -456,7 +456,7 @@ bool WriteToOKFile()
 
     if(File.Open(starg.okfilename, "w") == false)
     {
-        logfile.Write("File.Open(%s, \"w\") faild\n", starg.okfilename);
+        logfile.Write("File.Open(%s, \"w\") failed\n", starg.okfilename);
         return false;
     }
 
@@ -475,7 +475,7 @@ bool AppendToOkFile(struct st_fileinfo *stfilename)
 
     if(File.Open(starg.okfilename, "a") == false)
     {
-        logfile.Write("File.Open(%s, \"w\") faild\n", starg.okfilename);
+        logfile.Write("File.Open(%s, \"w\") failed\n", starg.okfilename);
         return false;
     }
 

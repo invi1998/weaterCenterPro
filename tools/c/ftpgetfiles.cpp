@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     // 进入ftp服务存放文件的目录
     if(ftp.login(starg.host, starg.username, starg.password, starg.mode) == false)
     {
-        logfile.Write("ftp.login(%s, %s, %s) faild\n", starg.host, starg.username, starg.password, starg.mode);
+        logfile.Write("ftp.login(%s, %s, %s) failed\n", starg.host, starg.username, starg.password, starg.mode);
         return -1;
     }
     logfile.Write("登陆%s成功\n", starg.host);
@@ -266,7 +266,7 @@ bool _ftpgetfiles()
     // 调用ftp.nlist()方法列出服务器目录中的文件，结果存放在本地文件中。
     if(ftp.chdir(starg.remotepath) == false)
     {
-        logfile.Write("ftp.chdir(%s) faild\n", starg.remotepath);
+        logfile.Write("ftp.chdir(%s) failed\n", starg.remotepath);
         return false;
     }
 
@@ -275,7 +275,7 @@ bool _ftpgetfiles()
     // 这里采用只有文件名比较好，第一：返回这个目录名是没有意义的，第二：去掉这些目录前缀，还可以节省网络开销（文件小）
     if(ftp.nlist(".", starg.listfilename) == false)
     {
-        logfile.Write("ftp.nlist(\".\", %s) faild \n", starg.listfilename);
+        logfile.Write("ftp.nlist(\".\", %s) failed \n", starg.listfilename);
         return false;
     }
 
@@ -285,7 +285,7 @@ bool _ftpgetfiles()
     // 把ftp.nlist()方法获取到的list文件加载到容器vfilelist2中.
     if(LoadListFile() == false)
     {
-        logfile.Write("LoadListFile() faild\n");
+        logfile.Write("LoadListFile() failed\n");
         return false;
     }
 
@@ -327,7 +327,7 @@ bool _ftpgetfiles()
         logfile.Write("get %s ... \n", strremotfilename);
         if(ftp.get(strremotfilename, strlocalfilename) == false)
         {
-            logfile.Write("ftp.get(%s, %s) faild\n", strremotfilename, strlocalfilename);
+            logfile.Write("ftp.get(%s, %s) failed\n", strremotfilename, strlocalfilename);
             return false;
         }
 
@@ -382,7 +382,7 @@ bool LoadListFile()
     // 用只读的方式打开该list文件
     if(File.Open(starg.listfilename, "r") == false)
     {
-        logfile.Write("File.Open(%s) faild\n", starg.listfilename);
+        logfile.Write("File.Open(%s) failed\n", starg.listfilename);
         return false;
     }
 
@@ -404,7 +404,7 @@ bool LoadListFile()
             // 获取服务端文件的时间
             if(ftp.mtime(stfileinfo.filename) == false)
             {
-                logfile.Write("ftp.mtime(%s) faild \n", stfileinfo.filename);
+                logfile.Write("ftp.mtime(%s) failed \n", stfileinfo.filename);
                 return false;
             }
             // 将文件时间拷贝进mtime中
@@ -496,7 +496,7 @@ bool WriteToOKFile()
 
     if(File.Open(starg.okfilename, "w") == false)
     {
-        logfile.Write("File.Open(%s, \"w\") faild\n", starg.okfilename);
+        logfile.Write("File.Open(%s, \"w\") failed\n", starg.okfilename);
         return false;
     }
 
@@ -515,7 +515,7 @@ bool AppendToOkFile(struct st_fileinfo *stfilename)
 
     if(File.Open(starg.okfilename, "a") == false)
     {
-        logfile.Write("File.Open(%s, \"w\") faild\n", starg.okfilename);
+        logfile.Write("File.Open(%s, \"w\") failed\n", starg.okfilename);
         return false;
     }
 

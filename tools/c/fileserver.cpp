@@ -56,7 +56,7 @@ int main(int argc,char *argv[])
 
   if(logfile.Open(argv[2], "a+") == false)
   {
-    printf("logfile.Open(%s, \"a+\") faild\n", argv[2]);
+    printf("logfile.Open(%s, \"a+\") failed\n", argv[2]);
     return -1;
   }
 
@@ -183,10 +183,10 @@ bool ClientLogin()
   // 解析客户端登录报文。
   _xmltoarg(strrecvbuffer);
 
-  // 如果客户端发送的报文中，clienttype既不是1也不是2就是非法报文，合法报文回复OK，非法报文回复faild
+  // 如果客户端发送的报文中，clienttype既不是1也不是2就是非法报文，合法报文回复OK，非法报文回复failed
   if(starg.clienttype != 1 && starg.clienttype != 2)
   {
-    strcpy(strsendbuffer, "faild");
+    strcpy(strsendbuffer, "failed");
   }
   else
   {

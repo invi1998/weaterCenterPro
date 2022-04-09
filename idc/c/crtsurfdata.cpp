@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   if(logfile.Open(argv[3]) == false)
   {
     // 日志文件打开失败
-    printf("logfile.Open(%s) faild.\n", argv[3]);
+    printf("logfile.Open(%s) failed.\n", argv[3]);
     // 程序退出
     return -1;
   }
@@ -167,7 +167,7 @@ bool LoadSTCode(const char * inifile)
   if(File.Open(inifile, "r") == false)
   {
     // 文件打开失败，写日志，函数返回
-    logfile.Write("File.Open(%s) faild.\n", inifile);
+    logfile.Write("File.Open(%s) failed.\n", inifile);
     return false;
   }
 
@@ -259,7 +259,7 @@ bool CrtSurfFile(const char* outpath, const char* datafmt)
   {
     // 失败的话，打印日志做一个提示
     // 失败的原因一般都是磁盘空间不足或者权限不足
-    logfile.Write("File.OpenForRename(%s) faild.\n", strFileName);
+    logfile.Write("File.OpenForRename(%s) failed.\n", strFileName);
     return false;
   }
 
