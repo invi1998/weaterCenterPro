@@ -48,6 +48,9 @@ bool _tcpputfiles();
 
 // 文件内容上传函数
 bool SendFile(const int socketfd, char *filename, const int filesize);
+
+// 删除或者转存到备份目录
+bool AckMessage(const char* buffer);
  
 int main(int argc,char *argv[])
 {
@@ -280,6 +283,7 @@ bool _tcpputfiles()
     // logfile.Write("strrecvbuffer:%s\n", strrecvbuffer);
 
     // 删除或者转存到备份目录
+    AckMessage(strrecvbuffer);
   }
 
   return true;
@@ -335,6 +339,55 @@ bool SendFile(const int socketfd, char *filename, const int filesize)
   if(fp != nullptr)
   {
     fclose(fp);     // 关闭文件指针
+  }
+
+  return true;
+}
+
+// 删除或者转存到备份目录
+bool AckMessage(const char* buffer)
+{
+
+  // 解析buffer
+  char filename[301];
+  char result[11];
+  memset(filename, 0, sizeof(filename));
+  memset(result, 0, sizeof(result));
+
+  GetXMLBuffer(buffer, "filename", filename, 300);
+  GetXMLBuffer(buffer, "result", result, 10);
+
+  if(strcmp(result, "ok") != 0)
+  {
+    return true;
+  }
+  
+  // ptype == 1.删除文件
+  if(starg.ptype == 1)
+  {
+    if(REMOVE(filename) == false)
+    {
+      logfile.Write("REMOVE(%s) failed \n", filename);
+      return false;
+    }
+  }
+
+  // ptype == 2 .转存到备份目录
+  if(starg.ptype == 2)
+  {
+    // 先生成备份目录的文件名
+    char filenamebak[301];
+
+    STRCPY(filenamebak, sizeof(filenamebak), filename);
+
+    // 然后将备份目录的路径替换进去
+    UpdateStr(filenamebak, starg.clientpath, starg.clientpathbak, false);
+
+    if(RENAME(filename, filenamebak) == false)
+    {
+      logfile.Write("RENAME(%s, %s) failed\n", filename, filenamebak);
+      return false;
+    }
   }
 
   return true;
