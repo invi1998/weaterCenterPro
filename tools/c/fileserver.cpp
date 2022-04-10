@@ -7,6 +7,7 @@
 
 CLogFile logfile;   // 服务程序运行日志对象
 CTcpServer TcpServer;   // tcp服务端类对象
+CPActive PActive;   // 进程心跳
 
 // 程序运行的参数结构体。
 struct st_arg
@@ -82,17 +83,17 @@ int main(int argc,char *argv[])
 
     logfile.Write("客户端（%s）已连接。\n",TcpServer.GetIP());
 
-    // if(fork() > 0)
-    // {
-    //   TcpServer.CloseClient();    // 父进程中关闭连接套接字（client 客户端套接字）
-    //   continue;   // 父进程继续回到accept
-    // }
+    if(fork() > 0)
+    {
+      TcpServer.CloseClient();    // 父进程中关闭连接套接字（client 客户端套接字）
+      continue;   // 父进程继续回到accept
+    }
 
-    // // 设置子进程的退出信号
-    // signal(SIGINT,ChildEXIT);
-    // signal(SIGTERM,ChildEXIT);
+    // 设置子进程的退出信号
+    signal(SIGINT,ChildEXIT);
+    signal(SIGTERM,ChildEXIT);
 
-    // TcpServer.CloseListen();    // 然后再子进程中关闭监听套接字
+    TcpServer.CloseListen();    // 然后再子进程中关闭监听套接字
 
     // 子进程与客户端进行通信,处理业务
 
@@ -211,10 +212,14 @@ bool ClientLogin()
 // 上传文件的主函数。
 void RecvFilesMain()
 {
+  PActive.AddPInfo(starg.timeout, starg.pname);
+
   while (true)
   {
     memset(strsendbuffer,0,sizeof(strsendbuffer));
     memset(strrecvbuffer,0,sizeof(strrecvbuffer));
+
+    PActive.UptATime();
 
     // 接收客户端的报文。
     // 第二个参数（超时时间）的取值必须大于starg.timetvl，小于starg.timeout。

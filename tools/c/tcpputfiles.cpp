@@ -40,6 +40,9 @@ char strsendbuffer[1024];
 // 接收报文的buffer
 char strrecvbuffer[1024];
 
+// 如果调用_tcpputfiles发送了文件，bocontinue为true，初始化为true
+bool bcontinue = true;
+
 // 解析xml到参数starg中
 bool _xmltoarg(char * strxmlbuffer);
 
@@ -75,7 +78,7 @@ int main(int argc,char *argv[])
   }
 
   // 把进程心跳写入共享内存
-  // PActive.AddPInfo(starg.timeout, starg.pname);
+  PActive.AddPInfo(starg.timeout, starg.pname);
 
   // 向服务端发起连接请求。
   if (TcpClient.ConnectToServer(starg.ip, starg.port)==false)
@@ -100,8 +103,14 @@ int main(int argc,char *argv[])
       EXIT(-1);
     }
 
-    sleep(starg.timetvl);     // 休息这么多秒，也就是每隔timetvl就检测一次文件，看是否有新文件需要上传
-    if(ActiveTest() == false) break;    // 休息结束发送一次心跳
+    if(bcontinue == false)
+    {
+      sleep(starg.timetvl);     // 休息这么多秒，也就是每隔timetvl就检测一次文件，看是否有新文件需要上传
+      if(ActiveTest() == false) break;    // 休息结束发送一次心跳
+    }
+
+    PActive.UptATime();
+
   }
 
   EXIT(0);
@@ -243,6 +252,11 @@ bool _tcpputfiles()
     return false;
   }
 
+  // 定义一个变量，表示未收到确认报文的数量
+  int delayed = 0;    // 每发送一个报文，该数量+1，每收到一个确认报文，该数量-1
+
+  bcontinue = false;
+
   while(1)
   {
     memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
@@ -250,6 +264,9 @@ bool _tcpputfiles()
 
     // 遍历目录中的每个文件，调用ReadDir()获取一个文件名
     if(Dir.ReadDir() == false) break;
+
+    // 只要有文件，就把变量 bcontinue 设置为true
+    bcontinue = true;
 
     // 然后把文件名，文件修改时间，文件大小组成报文，发送给对端
     SNPRINTF(strsendbuffer, sizeof(strsendbuffer), 1000, "<filename>%s</filename><mtime>%s</mtime><size>%d</size>", Dir.m_FullFileName, Dir.m_ModifyTime, Dir.m_FileSize);
@@ -266,6 +283,7 @@ bool _tcpputfiles()
     if(SendFile(TcpClient.m_connfd, Dir.m_FullFileName, Dir.m_FileSize) == true)
     {
       logfile.WriteEx("ok\n");
+      delayed++;
     }
     else
     {
@@ -274,15 +292,28 @@ bool _tcpputfiles()
       return false;
     }
 
-    // 接收对端的确认报文
-    if(TcpClient.Read(strrecvbuffer) == false)
-    {
-      logfile.Write("TcpClient.Read(%s) failed\n", strrecvbuffer);
-      return false;
-    }
-    // logfile.Write("strrecvbuffer:%s\n", strrecvbuffer);
+    PActive.UptATime();
 
+    // 接收对端的确认报文
+    while (delayed > 0)
+    {
+      memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
+      if(TcpRead(TcpClient.m_connfd, strrecvbuffer, 0, -1) == false) break;
+
+      // 删除或者转存到备份目录
+      delayed--;
+      AckMessage(strrecvbuffer);
+    }
+  }
+
+  // 继续接收对端的确认报文
+  while (delayed > 0)
+  {
+    memset(strrecvbuffer, 0, sizeof(strrecvbuffer));
+    if(TcpRead(TcpClient.m_connfd, strrecvbuffer, 0, 10) == false) break;
+    
     // 删除或者转存到备份目录
+    delayed--;
     AckMessage(strrecvbuffer);
   }
 
