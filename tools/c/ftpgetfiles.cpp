@@ -110,7 +110,6 @@ int main(int argc, char *argv[])
         logfile.Write("ftp.login(%s, %s, %s) failed\n", starg.host, starg.username, starg.password, starg.mode);
         return -1;
     }
-    logfile.Write("登陆%s成功\n", starg.host);
 
     // 文件下载
     if(_ftpgetfiles() == false)
@@ -324,14 +323,14 @@ bool _ftpgetfiles()
         SNPRINTF(strlocalfilename, sizeof(strlocalfilename), 300, "%s/%s", starg.localpath, (*iter).filename);  // 本地文件全路径文件名
 
         // 调用ftp.get()方法从服务器中下载文件
-        logfile.Write("get %s ... \n", strremotfilename);
+        logfile.Write("get %s ... ", strremotfilename);
         if(ftp.get(strremotfilename, strlocalfilename) == false)
         {
-            logfile.Write("ftp.get(%s, %s) failed\n", strremotfilename, strlocalfilename);
+            logfile.Write("failed\n");
             return false;
         }
 
-        logfile.Write("下载成功\n");
+        logfile.Write("ok\n");
 
         // 每次下载完一个文件后也需要更新一下心跳
         PActive.UptATime();     // 更新进程心跳

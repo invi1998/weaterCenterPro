@@ -108,7 +108,6 @@ int main(int argc, char *argv[])
         logfile.Write("ftp.login(%s, %s, %s) failed\n", starg.host, starg.username, starg.password, starg.mode);
         return -1;
     }
-    logfile.Write("登陆%s成功\n", starg.host);
 
     // 文件上传
     if(_ftpputfiles() == false)
