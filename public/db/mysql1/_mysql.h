@@ -1,161 +1,161 @@
 /**************************************************************************************/
-/*   ³ÌÐòÃû£º_mysql.h£¬´Ë³ÌÐòÊÇ¿ª·¢¿ò¼ÜµÄC/C++²Ù×÷MySQLÊý¾Ý¿âµÄÉùÃ÷ÎÄ¼þ¡£             */
-/*   ×÷Õß£ºÎâ´ÓÖÜ¡£                                                                   */
+/*   ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_mysql.hï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½ï¿½ï¿½ï¿½Üµï¿½C/C++ï¿½ï¿½ï¿½ï¿½MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½             */
+/*   ï¿½ï¿½ï¿½ß£ï¿½ï¿½ï¿½ï¿½ï¿½Ü¡ï¿½                                                                   */
 /**************************************************************************************/
 
 #ifndef __MYSQL_H
 #define __MYSQL_H
 
-// C/C++¿â³£ÓÃÍ·ÎÄ¼þ
+// C/C++ï¿½â³£ï¿½ï¿½Í·ï¿½Ä¼ï¿½
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
 
-#include <mysql.h>   // MySQLÊý¾Ý¿â½Ó¿Úº¯ÊýµÄÍ·ÎÄ¼þ
+#include <mysql.h>   // MySQLï¿½ï¿½ï¿½Ý¿ï¿½Ó¿Úºï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½Ä¼ï¿½
 
-// °ÑÎÄ¼þfilename¼ÓÔØµ½bufferÖÐ£¬±ØÐëÈ·±£buffer×ã¹»´ó¡£
-// ³É¹¦·µ»ØÎÄ¼þµÄ´óÐ¡£¬ÎÄ¼þ²»´æÔÚ»òÎª¿Õ·µ»Ø0¡£
+// ï¿½ï¿½ï¿½Ä¼ï¿½filenameï¿½ï¿½ï¿½Øµï¿½bufferï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½bufferï¿½ã¹»ï¿½ï¿½
+// ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ä´ï¿½Ð¡ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú»ï¿½Îªï¿½Õ·ï¿½ï¿½ï¿½0ï¿½ï¿½
 unsigned long filetobuf(const char *filename,char *buffer);
 
-// °ÑbufferÖÐµÄÄÚÈÝÐ´ÈëÎÄ¼þfilename£¬buffersizeÎªbufferµÄ´óÐ¡¡£
-// ³É¹¦·µ»Øtrue£¬Ê§°Ü·µ»Øfalse¡£
+// ï¿½ï¿½bufferï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½Ä¼ï¿½filenameï¿½ï¿½buffersizeÎªbufferï¿½Ä´ï¿½Ð¡ï¿½ï¿½
+// ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½trueï¿½ï¿½Ê§ï¿½Ü·ï¿½ï¿½ï¿½falseï¿½ï¿½
 bool buftofile(const char *filename,char *buffer,unsigned long buffersize);
 
-// MySQLµÇÂ¼»·¾³
+// MySQLï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½
 struct LOGINENV
 {
-  char ip[32];       // MySQLÊý¾Ý¿âµÄipµØÖ·¡£
-  int  port;         // MySQLÊý¾Ý¿âµÄÍ¨ÐÅ¶Ë¿Ú¡£
-  char user[32];     // µÇÂ¼MySQLÊý¾Ý¿âµÄÓÃ»§Ãû¡£
-  char pass[32];     // µÇÂ¼MySQLÊý¾Ý¿âµÄÃÜÂë¡£
-  char dbname[51];   // µÇÂ¼ºó£¬È±Ê¡´ò¿ªµÄÊý¾Ý¿â¡£
+  char ip[32];       // MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ipï¿½ï¿½Ö·ï¿½ï¿½
+  int  port;         // MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Í¨ï¿½Å¶Ë¿Ú¡ï¿½
+  char user[32];     // ï¿½ï¿½Â¼MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
+  char pass[32];     // ï¿½ï¿½Â¼MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ë¡£
+  char dbname[51];   // ï¿½ï¿½Â¼ï¿½ï¿½È±Ê¡ï¿½ò¿ªµï¿½ï¿½ï¿½ï¿½Ý¿â¡£
 };
 
-struct CDA_DEF       // µ÷ÓÃMySQL½Ó¿Úº¯ÊýÖ´ÐÐµÄ½á¹û¡£
+struct CDA_DEF       // ï¿½ï¿½ï¿½ï¿½MySQLï¿½Ó¿Úºï¿½ï¿½ï¿½Ö´ï¿½ÐµÄ½ï¿½ï¿½ï¿½ï¿½
 {
-  int      rc;          // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü¡£
-  unsigned long rpc;    // Èç¹ûÊÇinsert¡¢updateºÍdelete£¬±£´æÓ°Ïì¼ÇÂ¼µÄÐÐÊý£¬Èç¹ûÊÇselect£¬±£´æ½á¹û¼¯µÄÐÐÊý¡£
-  char     message[2048];  // Ö´ÐÐSQLÓï¾äÈç¹ûÊ§°Ü£¬´æ·Å´íÎóÃèÊöÐÅÏ¢¡£
+  int      rc;          // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü¡ï¿½
+  unsigned long rpc;    // ï¿½ï¿½ï¿½ï¿½ï¿½insertï¿½ï¿½updateï¿½ï¿½deleteï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½selectï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  char     message[2048];  // Ö´ï¿½ï¿½SQLï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½Å´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½
 };
 
-// MySQLÊý¾Ý¿âÁ¬½ÓÀà¡£
+// MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à¡£
 class connection
 {
 private:
-  // ´ÓconnstrÖÐ½âÎöip,username,password,dbname,port¡£
+  // ï¿½ï¿½connstrï¿½Ð½ï¿½ï¿½ï¿½ip,username,password,dbname,portï¿½ï¿½
   void setdbopt(char *connstr);
 
-  // ÉèÖÃ×Ö·û¼¯£¬ÒªÓëÊý¾Ý¿âµÄÒ»ÖÂ£¬·ñÔòÖÐÎÄ»á³öÏÖÂÒÂë
+  // ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ò»ï¿½Â£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   void character(char *charset);
 
-  LOGINENV m_env; // ·þÎñÆ÷»·¾³¾ä±ú¡£
+  LOGINENV m_env; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-  char m_dbtype[21];   // Êý¾Ý¿âÖÖÀà£¬¹Ì¶¨È¡ÖµÎª"mysql"¡£
+  char m_dbtype[21];   // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½à£¬ï¿½Ì¶ï¿½È¡ÖµÎª"mysql"ï¿½ï¿½
 public:
-  int m_state;         // ÓëÊý¾Ý¿âµÄÁ¬½Ó×´Ì¬£¬0-Î´Á¬½Ó£¬1-ÒÑÁ¬½Ó¡£
+  int m_state;         // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½0-Î´ï¿½ï¿½ï¿½Ó£ï¿½1-ï¿½ï¿½ï¿½ï¿½ï¿½Ó¡ï¿½
 
-  CDA_DEF m_cda;       // Êý¾Ý¿â²Ù×÷µÄ½á¹û»ò×îºóÒ»´ÎÖ´ÐÐSQLÓï¾äµÄ½á¹û¡£
+  CDA_DEF m_cda;       // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ö´ï¿½ï¿½SQLï¿½ï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½
 
-  char m_sql[10241];   // SQLÓï¾äµÄÎÄ±¾£¬×î³¤²»ÄÜ³¬¹ý10240×Ö½Ú¡£
+  char m_sql[10241];   // SQLï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½î³¤ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½10240ï¿½Ö½Ú¡ï¿½
 
-  connection();        // ¹¹Ôìº¯Êý¡£
- ~connection();        // Îö¹¹º¯Êý¡£
+  connection();        // ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½ï¿½ï¿½
+ ~connection();        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-  // µÇÂ¼Êý¾Ý¿â¡£
-  // connstr£ºÊý¾Ý¿âµÄµÇÂ¼²ÎÊý£¬¸ñÊ½£º"ip,username,password,dbname,port"£¬
-  // ÀýÈç£º"172.16.0.15,qxidc,qxidcpwd,qxidcdb,3306"¡£
-  // charset£ºÊý¾Ý¿âµÄ×Ö·û¼¯£¬Èç"gbk"£¬±ØÐëÓëÊý¾Ý¿â±£³ÖÒ»ÖÂ£¬·ñÔò»á³öÏÖÖÐÎÄÂÒÂëµÄÇé¿ö¡£
-  // autocommitopt£ºÊÇ·ñÆôÓÃ×Ô¶¯Ìá½»£¬0-²»ÆôÓÃ£¬1-ÆôÓÃ£¬È±Ê¡ÊÇ²»ÆôÓÃ¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬Ê§°ÜµÄ´úÂëÔÚm_cda.rcÖÐ£¬Ê§°ÜµÄÃèÊöÔÚm_cda.messageÖÐ¡£
+  // ï¿½ï¿½Â¼ï¿½ï¿½ï¿½Ý¿â¡£
+  // connstrï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Äµï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½"ip,username,password,dbname,port"ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ç£º"172.16.0.15,qxidc,qxidcpwd,qxidcdb,3306"ï¿½ï¿½
+  // charsetï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"gbk"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿â±£ï¿½ï¿½Ò»ï¿½Â£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // autocommitoptï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½á½»ï¿½ï¿½0-ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½1-ï¿½ï¿½ï¿½Ã£ï¿½È±Ê¡ï¿½Ç²ï¿½ï¿½ï¿½ï¿½Ã¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½Ê§ï¿½ÜµÄ´ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.rcï¿½Ð£ï¿½Ê§ï¿½Üµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.messageï¿½Ð¡ï¿½
   int connecttodb(char *connstr,char *charset,unsigned int autocommitopt=0);
 
-  // Ìá½»ÊÂÎñ¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
+  // ï¿½á½»ï¿½ï¿½ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int commit();
 
-  // »Ø¹öÊÂÎñ¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
+  // ï¿½Ø¹ï¿½ï¿½ï¿½ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int  rollback();
 
-  // ¶Ï¿ªÓëÊý¾Ý¿âµÄÁ¬½Ó¡£
-  // ×¢Òâ£¬¶Ï¿ªÓëÊý¾Ý¿âµÄÁ¬½ÓÊ±£¬È«²¿Î´Ìá½»µÄÊÂÎñ×Ô¶¯»Ø¹ö¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
+  // ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½Ó¡ï¿½
+  // ×¢ï¿½â£¬ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½È«ï¿½ï¿½Î´ï¿½á½»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½Ø¹ï¿½ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int disconnect();
 
-  // Ö´ÐÐSQLÓï¾ä¡£
-  // Èç¹ûSQLÓï¾ä²»ÐèÒª°ó¶¨ÊäÈëºÍÊä³ö±äÁ¿£¨ÎÞ°ó¶¨±äÁ¿¡¢·Ç²éÑ¯Óï¾ä£©£¬¿ÉÒÔÖ±½ÓÓÃ´Ë·½·¨Ö´ÐÐ¡£
-  // ²ÎÊýËµÃ÷£ºÕâÊÇÒ»¸ö¿É±ä²ÎÊý£¬ÓÃ·¨Óëprintfº¯ÊýÏàÍ¬¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬Ê§°ÜµÄ´úÂëÔÚm_cda.rcÖÐ£¬Ê§°ÜµÄÃèÊöÔÚm_cda.messageÖÐ£¬
-  // Èç¹û³É¹¦µÄÖ´ÐÐÁË·Ç²éÑ¯Óï¾ä£¬ÔÚm_cda.rpcÖÐ±£´æÁË±¾´ÎÖ´ÐÐSQLÓ°Ïì¼ÇÂ¼µÄÐÐÊý¡£
-  // ³ÌÐòÔ±±ØÐë¼ì²éexecute·½·¨µÄ·µ»ØÖµ¡£
-  // ÔÚconnectionÀàÖÐÌá¹©ÁËexecute·½·¨£¬ÊÇÎªÁË·½±ã³ÌÐòÔ±£¬ÔÚ¸Ã·½·¨ÖÐ£¬Ò²ÊÇÓÃsqlstatementÀàÀ´Íê³É¹¦ÄÜ¡£
+  // Ö´ï¿½ï¿½SQLï¿½ï¿½ä¡£
+  // ï¿½ï¿½ï¿½SQLï¿½ï¿½ä²»ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ°ó¶¨±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½Ñ¯ï¿½ï¿½ä£©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½ï¿½ï¿½Ã´Ë·ï¿½ï¿½ï¿½Ö´ï¿½Ð¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½printfï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½Ê§ï¿½ÜµÄ´ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.rcï¿½Ð£ï¿½Ê§ï¿½Üµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.messageï¿½Ð£ï¿½
+  // ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½Ë·Ç²ï¿½Ñ¯ï¿½ï¿½ä£¬ï¿½ï¿½m_cda.rpcï¿½Ð±ï¿½ï¿½ï¿½ï¿½Ë±ï¿½ï¿½ï¿½Ö´ï¿½ï¿½SQLÓ°ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½executeï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
+  // ï¿½ï¿½connectionï¿½ï¿½ï¿½ï¿½ï¿½á¹©ï¿½ï¿½executeï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½Ë·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½Ú¸Ã·ï¿½ï¿½ï¿½ï¿½Ð£ï¿½Ò²ï¿½ï¿½ï¿½ï¿½sqlstatementï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½Ü¡ï¿½
   int execute(const char *fmt,...);
 
   ////////////////////////////////////////////////////////////////////
-  // ÒÔÏÂ³ÉÔ±±äÁ¿ºÍº¯Êý£¬³ýÁËsqlstatementÀà£¬ÔÚÀàµÄÍâ²¿²»ÐèÒªµ÷ÓÃËü¡£
-  MYSQL     *m_conn;   // MySQLÊý¾Ý¿âÁ¬½Ó¾ä±ú¡£
-  int m_autocommitopt; // ×Ô¶¯Ìá½»±êÖ¾£¬0-¹Ø±Õ×Ô¶¯Ìá½»£»1-¿ªÆô×Ô¶¯Ìá½»¡£
-  void err_report();   // »ñÈ¡´íÎóÐÅÏ¢¡£
+  // ï¿½ï¿½ï¿½Â³ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½Íºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½sqlstatementï¿½à£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â²¿ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  MYSQL     *m_conn;   // MySQLï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Ó¾ï¿½ï¿½ï¿½ï¿½
+  int m_autocommitopt; // ï¿½Ô¶ï¿½ï¿½á½»ï¿½ï¿½Ö¾ï¿½ï¿½0-ï¿½Ø±ï¿½ï¿½Ô¶ï¿½ï¿½á½»ï¿½ï¿½1-ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½á½»ï¿½ï¿½
+  void err_report();   // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½
   ////////////////////////////////////////////////////////////////////
 };
 
-// Ö´ÐÐSQLÓï¾äÇ°°ó¶¨ÊäÈë»òÊä³ö±äÁ¿¸öÊýµÄ×î´óÖµ£¬256ÊÇºÜ´óµÄÁË£¬¿ÉÒÔ¸ù¾ÝÊµ¼ÊÇé¿öµ÷Õû¡£
+// Ö´ï¿½ï¿½SQLï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½256ï¿½ÇºÜ´ï¿½ï¿½ï¿½Ë£ï¿½ï¿½ï¿½ï¿½Ô¸ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 #define MAXPARAMS  256
 
-// ²Ù×÷SQLÓï¾äÀà¡£
+// ï¿½ï¿½ï¿½ï¿½SQLï¿½ï¿½ï¿½ï¿½à¡£
 class sqlstatement
 {
 private:
-  MYSQL_STMT *m_handle; // SQLÓï¾ä¾ä±ú¡£
+  MYSQL_STMT *m_handle; // SQLï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   
-  MYSQL_BIND params_in[MAXPARAMS];            // ÊäÈë²ÎÊý¡£
-  unsigned long params_in_length[MAXPARAMS];  // ÊäÈë²ÎÊýµÄÊµ¼Ê³¤¶È¡£
-  my_bool params_in_is_null[MAXPARAMS];       // ÊäÈë²ÎÊýÊÇ·ñÎª¿Õ¡£
-  unsigned maxbindin;                         // ÊäÈë²ÎÊý×î´óµÄ±àºÅ¡£
+  MYSQL_BIND params_in[MAXPARAMS];            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  unsigned long params_in_length[MAXPARAMS];  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½Ê³ï¿½ï¿½È¡ï¿½
+  my_bool params_in_is_null[MAXPARAMS];       // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Îªï¿½Õ¡ï¿½
+  unsigned maxbindin;                         // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½Å¡ï¿½
 
-  MYSQL_BIND params_out[MAXPARAMS]; // Êä³ö²ÎÊý¡£
+  MYSQL_BIND params_out[MAXPARAMS]; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   
-  connection *m_conn;  // Êý¾Ý¿âÁ¬½ÓÖ¸Õë¡£
-  int m_sqltype;       // SQLÓï¾äµÄÀàÐÍ£¬0-²éÑ¯Óï¾ä£»1-·Ç²éÑ¯Óï¾ä¡£
-  int m_autocommitopt; // ×Ô¶¯Ìá½»±êÖ¾£¬0-¹Ø±Õ£»1-¿ªÆô¡£
-  void err_report();   // ´íÎó±¨¸æ¡£
-  void initial();      // ³õÊ¼»¯³ÉÔ±±äÁ¿¡£
+  connection *m_conn;  // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ë¡£
+  int m_sqltype;       // SQLï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½0-ï¿½ï¿½Ñ¯ï¿½ï¿½ä£»1-ï¿½Ç²ï¿½Ñ¯ï¿½ï¿½ä¡£
+  int m_autocommitopt; // ï¿½Ô¶ï¿½ï¿½á½»ï¿½ï¿½Ö¾ï¿½ï¿½0-ï¿½Ø±Õ£ï¿½1-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  void err_report();   // ï¿½ï¿½ï¿½ó±¨¸æ¡£
+  void initial();      // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 public:
-  int m_state;         // ÓëÊý¾Ý¿âÁ¬½ÓµÄ°ó¶¨×´Ì¬£¬0-Î´°ó¶¨£¬1-ÒÑ°ó¶¨¡£
+  int m_state;         // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ÓµÄ°ï¿½×´Ì¬ï¿½ï¿½0-Î´ï¿½ó¶¨£ï¿½1-ï¿½Ñ°ó¶¨¡ï¿½
 
-  char m_sql[10241];   // SQLÓï¾äµÄÎÄ±¾£¬×î³¤²»ÄÜ³¬¹ý10240×Ö½Ú¡£
+  char m_sql[10241];   // SQLï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½î³¤ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½10240ï¿½Ö½Ú¡ï¿½
 
-  CDA_DEF m_cda;       // Ö´ÐÐSQLÓï¾äµÄ½á¹û¡£
+  CDA_DEF m_cda;       // Ö´ï¿½ï¿½SQLï¿½ï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½
 
-  sqlstatement();      // ¹¹Ôìº¯Êý¡£
-  sqlstatement(connection *conn);    // ¹¹Ôìº¯Êý£¬Í¬Ê±°ó¶¨Êý¾Ý¿âÁ¬½Ó¡£
- ~sqlstatement();      // Îö¹¹º¯Êý¡£
+  sqlstatement();      // ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½ï¿½ï¿½
+  sqlstatement(connection *conn);    // ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½ï¿½ï¿½Í¬Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Ó¡ï¿½
+ ~sqlstatement();      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-  // °ó¶¨Êý¾Ý¿âÁ¬½Ó¡£
-  // conn£ºÊý¾Ý¿âÁ¬½Óconnection¶ÔÏóµÄµØÖ·¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬Ö»Òªconn²ÎÊýÊÇÓÐÐ§µÄ£¬²¢ÇÒÊý¾Ý¿âµÄÓÎ±ê×ÊÔ´×ã¹»£¬connect·½·¨²»»á·µ»ØÊ§°Ü¡£
-  // ³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄconnect·½·¨µÄ·µ»ØÖµ¡£
-  // ×¢Òâ£¬Ã¿¸ösqlstatementÖ»ÐèÒª°ó¶¨Ò»´Î£¬ÔÚ°ó¶¨ÐÂµÄconnectionÇ°£¬±ØÐëÏÈµ÷ÓÃdisconnect·½·¨¡£
+  // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Ó¡ï¿½
+  // connï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½connectionï¿½ï¿½ï¿½ï¿½Äµï¿½Ö·ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½Ö»Òªconnï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½Î±ï¿½ï¿½ï¿½Ô´ï¿½ã¹»ï¿½ï¿½connectï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á·µï¿½ï¿½Ê§ï¿½Ü¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½ï¿½connectï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
+  // ×¢ï¿½â£¬Ã¿ï¿½ï¿½sqlstatementÖ»ï¿½ï¿½Òªï¿½ï¿½Ò»ï¿½Î£ï¿½ï¿½Ú°ï¿½ï¿½Âµï¿½connectionÇ°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Èµï¿½ï¿½ï¿½disconnectï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   int connect(connection *conn);
 
-  // È¡ÏûÓëÊý¾Ý¿âÁ¬½ÓµÄ°ó¶¨¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
+  // È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ÓµÄ°ó¶¨¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int disconnect();
 
-  // ×¼±¸SQLÓï¾ä¡£
-  // ²ÎÊýËµÃ÷£ºÕâÊÇÒ»¸ö¿É±ä²ÎÊý£¬ÓÃ·¨Óëprintfº¯ÊýÏàÍ¬¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
-  // ×¢Òâ£ºÈç¹ûSQLÓï¾äÃ»ÓÐ¸Ä±ä£¬Ö»ÐèÒªprepareÒ»´Î¾Í¿ÉÒÔÁË¡£
+  // ×¼ï¿½ï¿½SQLï¿½ï¿½ä¡£
+  // ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½printfï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
+  // ×¢ï¿½â£ºï¿½ï¿½ï¿½SQLï¿½ï¿½ï¿½Ã»ï¿½Ð¸Ä±ä£¬Ö»ï¿½ï¿½ÒªprepareÒ»ï¿½Î¾Í¿ï¿½ï¿½ï¿½ï¿½Ë¡ï¿½
   int prepare(const char *fmt,...);
 
-  // °ó¶¨ÊäÈë±äÁ¿µÄµØÖ·¡£
-  // position£º×Ö¶ÎµÄË³Ðò£¬´Ó1¿ªÊ¼£¬±ØÐëÓëprepare·½·¨ÖÐµÄSQLµÄÐòºÅÒ»Ò»¶ÔÓ¦¡£
-  // value£ºÊäÈë±äÁ¿µÄµØÖ·£¬Èç¹ûÊÇ×Ö·û´®£¬ÄÚ´æ´óÐ¡Ó¦¸ÃÊÇ±í¶ÔÓ¦µÄ×Ö¶Î³¤¶È¼Ó1¡£
-  // len£ºÈç¹ûÊäÈë±äÁ¿µÄÊý¾ÝÀàÐÍÊÇ×Ö·û´®£¬ÓÃlenÖ¸¶¨ËüµÄ×î´ó³¤¶È£¬½¨Òé²ÉÓÃ±í¶ÔÓ¦µÄ×Ö¶Î³¤¶È¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
-  // ×¢Òâ£º1£©Èç¹ûSQLÓï¾äÃ»ÓÐ¸Ä±ä£¬Ö»ÐèÒªbindinÒ»´Î¾Í¿ÉÒÔÁË£¬2£©°ó¶¨ÊäÈë±äÁ¿µÄ×ÜÊý²»ÄÜ³¬¹ýMAXPARAMS¸ö¡£
+  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Ö·ï¿½ï¿½
+  // positionï¿½ï¿½ï¿½Ö¶Îµï¿½Ë³ï¿½ò£¬´ï¿½1ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½prepareï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½SQLï¿½ï¿½ï¿½ï¿½ï¿½Ò»Ò»ï¿½ï¿½Ó¦ï¿½ï¿½
+  // valueï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½Ð¡Ó¦ï¿½ï¿½ï¿½Ç±ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ö¶Î³ï¿½ï¿½È¼ï¿½1ï¿½ï¿½
+  // lenï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½lenÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó³¤¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ö¶Î³ï¿½ï¿½È¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
+  // ×¢ï¿½â£º1ï¿½ï¿½ï¿½ï¿½ï¿½SQLï¿½ï¿½ï¿½Ã»ï¿½Ð¸Ä±ä£¬Ö»ï¿½ï¿½ÒªbindinÒ»ï¿½Î¾Í¿ï¿½ï¿½ï¿½ï¿½Ë£ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½MAXPARAMSï¿½ï¿½ï¿½ï¿½
   int bindin(unsigned int position,int    *value);
   int bindin(unsigned int position,long   *value);
   int bindin(unsigned int position,unsigned int  *value);
@@ -163,15 +163,15 @@ public:
   int bindin(unsigned int position,float *value);
   int bindin(unsigned int position,double *value);
   int bindin(unsigned int position,char   *value,unsigned int len);
-  // °ó¶¨BLOB×Ö¶Î£¬bufferÎªBLOB×Ö¶ÎµÄÄÚÈÝ£¬sizeÎªBLOB×Ö¶ÎµÄ´óÐ¡¡£
+  // ï¿½ï¿½BLOBï¿½Ö¶Î£ï¿½bufferÎªBLOBï¿½Ö¶Îµï¿½ï¿½ï¿½ï¿½Ý£ï¿½sizeÎªBLOBï¿½Ö¶ÎµÄ´ï¿½Ð¡ï¿½ï¿½
   int bindinlob(unsigned int position,void *buffer,unsigned long *size);
 
-  // °ó¶¨Êä³ö±äÁ¿µÄµØÖ·¡£
-  // position£º×Ö¶ÎµÄË³Ðò£¬´Ó1¿ªÊ¼£¬ÓëSQLµÄ½á¹û¼¯Ò»Ò»¶ÔÓ¦¡£
-  // value£ºÊä³ö±äÁ¿µÄµØÖ·£¬Èç¹ûÊÇ×Ö·û´®£¬ÄÚ´æ´óÐ¡Ó¦¸ÃÊÇ±í¶ÔÓ¦µÄ×Ö¶Î³¤¶È¼Ó1¡£
-  // len£ºÈç¹ûÊä³ö±äÁ¿µÄÊý¾ÝÀàÐÍÊÇ×Ö·û´®£¬ÓÃlenÖ¸¶¨ËüµÄ×î´ó³¤¶È£¬½¨Òé²ÉÓÃ±í¶ÔÓ¦µÄ×Ö¶Î³¤¶È¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬³ÌÐòÔ±Ò»°ã²»±Ø¹ØÐÄ·µ»ØÖµ¡£
-  // ×¢Òâ£º1£©Èç¹ûSQLÓï¾äÃ»ÓÐ¸Ä±ä£¬Ö»ÐèÒªbindoutÒ»´Î¾Í¿ÉÒÔÁË£¬2£©°ó¶¨Êä³ö±äÁ¿µÄ×ÜÊý²»ÄÜ³¬¹ýMAXPARAMS¸ö¡£
+  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Ö·ï¿½ï¿½
+  // positionï¿½ï¿½ï¿½Ö¶Îµï¿½Ë³ï¿½ò£¬´ï¿½1ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½SQLï¿½Ä½ï¿½ï¿½ï¿½ï¿½Ò»Ò»ï¿½ï¿½Ó¦ï¿½ï¿½
+  // valueï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½Ð¡Ó¦ï¿½ï¿½ï¿½Ç±ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ö¶Î³ï¿½ï¿½È¼ï¿½1ï¿½ï¿½
+  // lenï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½lenÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó³¤¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ö¶Î³ï¿½ï¿½È¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½Ô±Ò»ï¿½ã²»ï¿½Ø¹ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
+  // ×¢ï¿½â£º1ï¿½ï¿½ï¿½ï¿½ï¿½SQLï¿½ï¿½ï¿½Ã»ï¿½Ð¸Ä±ä£¬Ö»ï¿½ï¿½ÒªbindoutÒ»ï¿½Î¾Í¿ï¿½ï¿½ï¿½ï¿½Ë£ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½MAXPARAMSï¿½ï¿½ï¿½ï¿½
   int bindout(unsigned int position,int    *value);
   int bindout(unsigned int position,long   *value);
   int bindout(unsigned int position,unsigned int  *value);
@@ -179,31 +179,31 @@ public:
   int bindout(unsigned int position,float *value);
   int bindout(unsigned int position,double *value);
   int bindout(unsigned int position,char   *value,unsigned int len);
-  // °ó¶¨BLOB×Ö¶Î£¬bufferÓÃÓÚ´æ·ÅBLOB×Ö¶ÎµÄÄÚÈÝ£¬buffersizeÎªbufferÕ¼ÓÃÄÚ´æµÄ´óÐ¡£¬
-  // sizeÎª½á¹û¼¯ÖÐBLOB×Ö¶ÎÊµ¼ÊµÄ´óÐ¡£¬×¢Òâ£¬Ò»¶¨Òª±£Ö¤buffer×ã¹»´ó£¬·ÀÖ¹ÄÚ´æÒç³ö¡£
+  // ï¿½ï¿½BLOBï¿½Ö¶Î£ï¿½bufferï¿½ï¿½ï¿½Ú´ï¿½ï¿½BLOBï¿½Ö¶Îµï¿½ï¿½ï¿½ï¿½Ý£ï¿½buffersizeÎªbufferÕ¼ï¿½ï¿½ï¿½Ú´ï¿½Ä´ï¿½Ð¡ï¿½ï¿½
+  // sizeÎªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½BLOBï¿½Ö¶ï¿½Êµï¿½ÊµÄ´ï¿½Ð¡ï¿½ï¿½×¢ï¿½â£¬Ò»ï¿½ï¿½Òªï¿½ï¿½Ö¤bufferï¿½ã¹»ï¿½ó£¬·ï¿½Ö¹ï¿½Ú´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   int bindoutlob(unsigned int position,void *buffer,unsigned long buffersize,unsigned long *filesize);
 
-  // Ö´ÐÐSQLÓï¾ä¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬Ê§°ÜµÄ´úÂëÔÚm_cda.rcÖÐ£¬Ê§°ÜµÄÃèÊöÔÚm_cda.messageÖÐ¡£
-  // Èç¹û³É¹¦µÄÖ´ÐÐÁË·Ç²éÑ¯Óï¾ä£¬ÔÚm_cda.rpcÖÐ±£´æÁË±¾´ÎÖ´ÐÐSQLÓ°Ïì¼ÇÂ¼µÄÐÐÊý¡£
-  // ³ÌÐòÔ±±ØÐë¼ì²éexecute·½·¨µÄ·µ»ØÖµ¡£
+  // Ö´ï¿½ï¿½SQLï¿½ï¿½ä¡£
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½Ê§ï¿½ÜµÄ´ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.rcï¿½Ð£ï¿½Ê§ï¿½Üµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.messageï¿½Ð¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½Ë·Ç²ï¿½Ñ¯ï¿½ï¿½ä£¬ï¿½ï¿½m_cda.rpcï¿½Ð±ï¿½ï¿½ï¿½ï¿½Ë±ï¿½ï¿½ï¿½Ö´ï¿½ï¿½SQLÓ°ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½executeï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int execute();
 
-  // Ö´ÐÐSQLÓï¾ä¡£
-  // Èç¹ûSQLÓï¾ä²»ÐèÒª°ó¶¨ÊäÈëºÍÊä³ö±äÁ¿£¨ÎÞ°ó¶¨±äÁ¿¡¢·Ç²éÑ¯Óï¾ä£©£¬¿ÉÒÔÖ±½ÓÓÃ´Ë·½·¨Ö´ÐÐ¡£
-  // ²ÎÊýËµÃ÷£ºÕâÊÇÒ»¸ö¿É±ä²ÎÊý£¬ÓÃ·¨Óëprintfº¯ÊýÏàÍ¬¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬ÆäËüÊ§°Ü£¬Ê§°ÜµÄ´úÂëÔÚm_cda.rcÖÐ£¬Ê§°ÜµÄÃèÊöÔÚm_cda.messageÖÐ£¬
-  // Èç¹û³É¹¦µÄÖ´ÐÐÁË·Ç²éÑ¯Óï¾ä£¬ÔÚm_cda.rpcÖÐ±£´æÁË±¾´ÎÖ´ÐÐSQLÓ°Ïì¼ÇÂ¼µÄÐÐÊý¡£
-  // ³ÌÐòÔ±±ØÐë¼ì²éexecute·½·¨µÄ·µ»ØÖµ¡£
+  // Ö´ï¿½ï¿½SQLï¿½ï¿½ä¡£
+  // ï¿½ï¿½ï¿½SQLï¿½ï¿½ä²»ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ°ó¶¨±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½Ñ¯ï¿½ï¿½ä£©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½ï¿½ï¿½Ã´Ë·ï¿½ï¿½ï¿½Ö´ï¿½Ð¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½printfï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½Ê§ï¿½ÜµÄ´ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.rcï¿½Ð£ï¿½Ê§ï¿½Üµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.messageï¿½Ð£ï¿½
+  // ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½Ë·Ç²ï¿½Ñ¯ï¿½ï¿½ä£¬ï¿½ï¿½m_cda.rpcï¿½Ð±ï¿½ï¿½ï¿½ï¿½Ë±ï¿½ï¿½ï¿½Ö´ï¿½ï¿½SQLÓ°ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½executeï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int execute(const char *fmt,...);
 
-  // ´Ó½á¹û¼¯ÖÐ»ñÈ¡Ò»Ìõ¼ÇÂ¼¡£
-  // Èç¹ûÖ´ÐÐµÄSQLÓï¾äÊÇ²éÑ¯Óï¾ä£¬µ÷ÓÃexecute·½·¨ºó£¬»á²úÉúÒ»¸ö½á¹û¼¯£¨´æ·ÅÔÚÊý¾Ý¿âµÄ»º³åÇøÖÐ£©¡£
-  // next·½·¨´Ó½á¹û¼¯ÖÐ»ñÈ¡Ò»Ìõ¼ÇÂ¼£¬°Ñ×Ö¶ÎµÄÖµ·ÅÈëÒÑ°ó¶¨µÄÊä³ö±äÁ¿ÖÐ¡£
-  // ·µ»ØÖµ£º0-³É¹¦£¬1403-½á¹û¼¯ÒÑÎÞ¼ÇÂ¼£¬ÆäËü-Ê§°Ü£¬Ê§°ÜµÄ´úÂëÔÚm_cda.rcÖÐ£¬Ê§°ÜµÄÃèÊöÔÚm_cda.messageÖÐ¡£
-  // ·µ»ØÊ§°ÜµÄÔ­ÒòÖ÷ÒªÓÐÁ½¸ö£º1£©ÓëÊý¾Ý¿âµÄÁ¬½ÓÒÑ¶Ï¿ª£»2£©°ó¶¨Êä³ö±äÁ¿µÄÄÚ´æÌ«Ð¡¡£
-  // Ã¿Ö´ÐÐÒ»´Înext·½·¨£¬m_cda.rpcµÄÖµ¼Ó1¡£
-  // ³ÌÐòÔ±±ØÐë¼ì²énext·½·¨µÄ·µ»ØÖµ¡£
+  // ï¿½Ó½ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½È¡Ò»ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½
+  // ï¿½ï¿½ï¿½Ö´ï¿½Ðµï¿½SQLï¿½ï¿½ï¿½ï¿½Ç²ï¿½Ñ¯ï¿½ï¿½ä£¬ï¿½ï¿½ï¿½ï¿½executeï¿½ï¿½ï¿½ï¿½ï¿½ó£¬»ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½
+  // nextï¿½ï¿½ï¿½ï¿½ï¿½Ó½ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½È¡Ò»ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶Îµï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½Ñ°ó¶¨µï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0-ï¿½É¹ï¿½ï¿½ï¿½1403-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½-Ê§ï¿½Ü£ï¿½Ê§ï¿½ÜµÄ´ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.rcï¿½Ð£ï¿½Ê§ï¿½Üµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.messageï¿½Ð¡ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Üµï¿½Ô­ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¶Ï¿ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½Ì«Ð¡ï¿½ï¿½
+  // Ã¿Ö´ï¿½ï¿½Ò»ï¿½ï¿½nextï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m_cda.rpcï¿½ï¿½Öµï¿½ï¿½1ï¿½ï¿½
+  // ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½nextï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½Öµï¿½ï¿½
   int next();
 };
 
