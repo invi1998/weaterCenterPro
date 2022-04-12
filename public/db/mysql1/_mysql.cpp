@@ -757,7 +757,7 @@ int sqlstatement::execute()
   
   // 如果不是查询语句，就获取影响记录的行数
   if (m_sqltype == 1) 
-  { 
+  {
     m_cda.rpc=m_handle->affected_rows;
     m_conn->m_cda.rpc=m_cda.rpc;
   }
