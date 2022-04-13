@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     printf("生成的测试气象数据存放的目录 : outpath\n");
     printf("日志存放路径 : logfile\n");
     printf("指定生成的数据保存为什么格式 : datafmt\n");
-    printf("这是一个可选参数，表示生成指定时间的数据和文件： datatime\n\n\n");
+    printf("这是一个可选参数，表示生成指定时间的数据和文件： datatime\n\n\n\n");
 
     // 程序退出
     return -1;
