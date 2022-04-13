@@ -17,5 +17,14 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  // 操作sql语句的对象（创建该对象有两种方式创建）
+  sqlstatement stmt(&conn);
+  // 或者
+  // sqlstatement stmt;
+  // stmt.connect(&conn);
+
+  // 准备创建超级女生信息表
+  // 超女编号
+
   return 0;
 }
