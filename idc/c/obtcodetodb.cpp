@@ -23,7 +23,7 @@ CLogFile logfile;
 
 connection conn;            // 数据库连接对象
 
-CPActive PActive;
+CPActive PActive;         // 进程心跳
 
 void EXIT(int sig);
 
@@ -35,7 +35,7 @@ int main(int argc, char * argv[])
         printf("\n");
         printf("Using:./obtcodetodb inifile connstr charset logfile\n");
 
-        printf("Example:/project/tools1/bin/procctl 120 /project/idc1/bin/obtcodetodb /project/idc/ini/stcode.ini \"127.0.0.1,root,mysqlpwd,mysql,3306\" utf8 /log/idc/obtcodetodb.log\n\n");
+        printf("Example:/project/tools/bin/procctl 120 /project/idc/bin/obtcodetodb /project/idc/ini/stcode.ini \"192.168.31.133,root,sh269jgl105,mysql,3306\" utf8 /log/idc/obtcodetodb.log\n\n");
 
         printf("本程序用于把全国站点参数数据保存到数据库表中，如果站点不存在则插入，站点已存在则更新。\n");
         printf("inifile 站点参数文件名（全路径）。\n");
@@ -56,11 +56,14 @@ int main(int argc, char * argv[])
     // 打开日志文件。
     if (logfile.Open(argv[4],"a+")==false)
     {
-        printf("打开日志文件失败（%s）。\n",argv[4]); return -1;
+        printf("打开日志文件失败（%s）。\n",argv[4]);
+        return -1;
     }
 
+    PActive.AddPInfo(10, "obtcodetodb");        // 进程的心跳时间10s
+
     // 把全国站点参数文件加载到vstcode容器中
-    if(LoadSTCode() == false)
+    if(LoadSTCode(argv[1]) == false)
     {
         printf("打开日志文件失败（%s）。\n",argv[4]);
         return -1;
@@ -75,7 +78,7 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    logfile("数据库连接成功！\n");
+    logfile.Write("数据库连接成功！\n");
 
     // 表结构如下
     // +----------+-------------+------+-----+-------------------+-----------------------------+
@@ -95,7 +98,8 @@ int main(int argc, char * argv[])
 
     // 准备插入表的sql语句
     sqlstatement stmtins(&conn);
-    stmtins.prepare("insert into T_ZHOBTCODE(obtid, cityname, provname, lat, lon, height, upttime) values(:1, :2, :3, :4, :5, :6, now())");
+    // 注意：这里因为我们是使用整数来表示浮点数，所以要注意单位转换（经度纬度 这两个字段都需要*100，海拔高度需要*10）
+    stmtins.prepare("insert into T_ZHOBTCODE(obtid, cityname, provname, lat, lon, height, upttime) values(:1, :2, :3, :4*100, :5*100, :6*10, now())");
     // 绑定输入变量地址
     stmtins.bindin(1, stcode.obtid, 10);
     stmtins.bindin(2, stcode.cityname, 30);
@@ -106,7 +110,8 @@ int main(int argc, char * argv[])
 
     // 准备更新表的sql语句
     sqlstatement stmtupt(&conn);
-    stmtupt.prepare("update T_ZHOBTCODE set cityname=:1, provname=:2, lat=:3, lon=:4, height=:5, upttime=now() where id=:6");
+    // 注意：这里因为我们是使用整数来表示浮点数，所以要注意单位转换（经度纬度 这两个字段都需要*100，海拔高度需要*10）
+    stmtupt.prepare("update T_ZHOBTCODE set cityname=:1, provname=:2, lat=:3*100, lon=:4*100, height=:5*10, upttime=now() where obtid=:6");
     // 遍历vstcode容器
     // 绑定输入变量地址
     stmtupt.bindin(1, stcode.cityname, 30);
@@ -120,10 +125,10 @@ int main(int argc, char * argv[])
     int inscount = 0, uptcount = 0;
     CTimer Timer;
 
-    for(auto iter = vstcode,begin(); iter != vstcode.end(); ++iter)
+    for(auto iter = vstcode.begin(); iter != vstcode.end(); ++iter)
     {
         // 从容器中取出一条记录到结构体stcode中
-        memccpy(&stcode, &(*iter), sizeof(struct st_stcode));
+        memcpy(&stcode, &(*iter), sizeof(struct st_stcode));
 
         // 执行插入的sql语句
         if(stmtins.execute() != 0)
@@ -213,4 +218,14 @@ bool LoadSTCode(const char *inifile)
     */
 
     return true;
+}
+
+void EXIT(int sig)
+{
+    logfile.Write("程序退出，sig=%d\n\n",sig);
+
+    // 断开数据库连接
+    conn.disconnect();
+
+    exit(0);
 }

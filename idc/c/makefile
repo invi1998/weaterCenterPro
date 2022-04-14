@@ -30,7 +30,7 @@ crtsurfdata:crtsurfdata.cpp
 	cp crtsurfdata ../bin/.
 
 obtcodetodb:obtcodetodb.cpp
-	g++ $(CFLAGS) -o obtcodetodb obtcodetodb.cpp $(PUBINCL) $(PUBCPP) -lm -lc
+	g++ $(CFLAGS) -o obtcodetodb obtcodetodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
 	cp obtcodetodb ../bin/.
 
 # 编译的清理

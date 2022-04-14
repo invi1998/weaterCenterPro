@@ -62,7 +62,7 @@ int main(int argc,char *argv[])
   {
     printf("Using:./fileserver port logfile\n");
     printf("Example:./fileserver 5005 /log/idc/fileserver.log\n"); 
-    printf("         /project/tools1/bin/procctl 10 /project/tools1/bin/fileserver 5005 /log/idc/fileserver.log\n\n\n"); 
+    printf("         /project/tools/bin/procctl 10 /project/tools/bin/fileserver 5005 /log/idc/fileserver.log\n\n\n"); 
     return -1;
   }
 
