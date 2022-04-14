@@ -9,7 +9,7 @@ MYSQLLIBS = -lmysqlclient
 
 CFLAGS=-g -Wno-write-strings
 
-all:createtable inserttable updatetable selecttable deletetable
+all:createtable inserttable updatetable selecttable deletetable filetoblob
 
 createtable:createtable.cpp _mysql.h _mysql.cpp
 	g++ $(CFLAGS) -o createtable createtable.cpp $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) _mysql.cpp -lm -lc
@@ -26,5 +26,8 @@ selecttable:selecttable.cpp _mysql.h _mysql.cpp
 deletetable:deletetable.cpp _mysql.h _mysql.cpp
 	g++ $(CFLAGS) -o deletetable deletetable.cpp $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) _mysql.cpp -lm -lc
 
+filetoblob:filetoblob.cpp _mysql.h _mysql.cpp
+	g++ $(CFLAGS) -o filetoblob filetoblob.cpp $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) _mysql.cpp -lm -lc
+
 clean:
-	rm -rf createtable inserttable updatetable selecttable deletetable
+	rm -rf createtable inserttable updatetable selecttable deletetable filetoblob
