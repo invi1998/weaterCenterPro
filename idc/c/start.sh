@@ -37,3 +37,7 @@
 
 # 清理采集的全国气象站点观测的分钟数据目录/tmp/tcpgetest中的历史数据文件。
 /project/tools/bin/procctl 300 /project/tools/bin/deletefiles /tmp/tcpgetest "*" 0.02
+
+# 把全国站点参数数据保存到数据库表中，如果站点不存在则插入，站点已存在则更新。
+/project/tools/bin/procctl 300 /project/idc/bin/obtcodetodb /project/idc/ini/stcode.ini "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/obtcodetodb.log
+
