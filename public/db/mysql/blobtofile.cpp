@@ -67,6 +67,6 @@ int main(int argc,char *argv[])
     
     printf("本次查询gills表%ld条记录\n", stmt.m_cda.rpc);
 
-  return 0;
+    return 0;
 
 }
