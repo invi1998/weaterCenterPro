@@ -22,7 +22,6 @@ struct st_zhobtmind
   char vis[11];        // 能见度：0.1米。
 }stzhobtmind;
 
-
 void EXIT(int sig);
 
 // 业务处理主函数
@@ -104,7 +103,6 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
         {
             break;
         }
-        logfile.Write("filename = %s\n", Dir.m_FullFileName);
         
         // 判断数据库是否已经连接，如果已经连接，就不用再连数据库了(m_state与数据库的连接状态，0-未连接，1-已连接)
         if(conn.m_state == 0)
@@ -113,7 +111,7 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
             if(conn.connecttodb(connstr, charset) != 0)
             {
                 logfile.Write("connect database(%s) failed\n%s\n", connstr, conn.m_cda.message);
-                return -1;
+                return false;
             }
             logfile.Write("connect database(%s) ok\n", connstr);
 
@@ -173,11 +171,7 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
         {
             // 处理文件中的每一行
             // 读取文件的一行到strbuffer中，其中以 “</endl>”为字符串结束标志（为行读取结束标志）
-            if(File.FFGETS(strbuffer, 1000, "<endl/>") == false)
-            {
-                logfile.Write("File.FFGETS(strbuffer, 1000, \"<endl/>\") failed\n");
-                break;
-            }
+            if(File.FFGETS(strbuffer, 1000, "<endl/>") == false) break;
 
             totalcount++;
 
