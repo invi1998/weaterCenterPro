@@ -38,7 +38,7 @@ public:
     CZHOBTMIND(connection *conn, CLogFile *logfile);
 
     void BindConnLog(connection *conn, CLogFile *logfile);      // 把connection和CLogFile的地址传递进去
-    bool SplitBuffer(char *strline);            // 把从哪文件中读取到的一行数据拆分到m_zhobtmind结构体中
+    bool SplitBuffer(char *strline, int fileType);            // 把从哪文件中读取到的一行数据拆分到m_zhobtmind结构体中
     bool InsertTable();                         // 把m_zhobtmind结构体中的数据插入到T_ZHOBTMIND表中
 };
 

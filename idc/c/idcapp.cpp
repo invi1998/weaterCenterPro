@@ -24,30 +24,61 @@ void CZHOBTMIND::BindConnLog(connection *conn, CLogFile *logfile)
 }
 
 // 把从哪文件中读取到的一行数据拆分到m_zhobtmind结构体中
-bool CZHOBTMIND::SplitBuffer(char *strline)
+bool CZHOBTMIND::SplitBuffer(char *strline, int fileType)
 {
     // 初始化结构体
     memset(&m_zhobtmind, 0, sizeof(struct st_zhobtmind));
-    GetXMLBuffer(strline, "obtid", m_zhobtmind.obtid, 10);
-    GetXMLBuffer(strline, "ddatetime", m_zhobtmind.ddatetime, 14);
-    char tmp[11];       // 定义一个临时变量
-    GetXMLBuffer(strline, "t", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
-    if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+
+    if(fileType == 0)       // 处理xml文件格式
     {
-        // 然后把它转换一下，存入结构体中去
-        snprintf(m_zhobtmind.t, 10, "%d", (int)(atof(tmp)*10));
+        GetXMLBuffer(strline, "obtid", m_zhobtmind.obtid, 10);
+        GetXMLBuffer(strline, "ddatetime", m_zhobtmind.ddatetime, 14);
+        char tmp[11];       // 定义一个临时变量
+        GetXMLBuffer(strline, "t", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
+        if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+        {
+            // 然后把它转换一下，存入结构体中去
+            snprintf(m_zhobtmind.t, 10, "%d", (int)(atof(tmp)*10));
+        }
+        GetXMLBuffer(strline, "p", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
+        if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+        {
+            // 然后把它转换一下，存入结构体中去
+            snprintf(m_zhobtmind.p, 10, "%d", (int)(atof(tmp)*10));
+        }
+        GetXMLBuffer(strline, "u", m_zhobtmind.u, 10);
+        GetXMLBuffer(strline, "wd", m_zhobtmind.wd, 10);
+        GetXMLBuffer(strline, "wf", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.wf, 10, "%d", (int)(atof(tmp)*10));
+        GetXMLBuffer(strline, "r", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.r, 10, "%d", (int)(atof(tmp)*10));
+        GetXMLBuffer(strline, "vis", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.vis, 10, "%d", (int)(atof(tmp)*10));
     }
-    GetXMLBuffer(strline, "p", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
-    if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+    else if(fileType == 1)      // 处理csv格式
     {
-        // 然后把它转换一下，存入结构体中去
-        snprintf(m_zhobtmind.p, 10, "%d", (int)(atof(tmp)*10));
+        CCmdStr Cmdstr;
+        Cmdstr.SplitToCmd(strline, ",");
+
+        Cmdstr.GetValue(0, m_zhobtmind.obtid, 10);
+        Cmdstr.GetValue(1, m_zhobtmind.ddatetime, 14);
+        char tmp[11];       // 定义一个临时变量
+        Cmdstr.GetValue(2, tmp, 10);      // xml解析出来的内容放到临时变量tmp中
+        if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+        {
+            // 然后把它转换一下，存入结构体中去
+            snprintf(m_zhobtmind.t, 10, "%d", (int)(atof(tmp)*10));
+        }
+        Cmdstr.GetValue(3, tmp, 10);      // xml解析出来的内容放到临时变量tmp中
+        if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+        {
+            // 然后把它转换一下，存入结构体中去
+            snprintf(m_zhobtmind.p, 10, "%d", (int)(atof(tmp)*10));
+        }
+        Cmdstr.GetValue(4, m_zhobtmind.u, 10);
+        Cmdstr.GetValue(5, m_zhobtmind.wd, 10);
+        Cmdstr.GetValue(6, tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.wf, 10, "%d", (int)(atof(tmp)*10));
+        Cmdstr.GetValue(7, tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.r, 10, "%d", (int)(atof(tmp)*10));
+        Cmdstr.GetValue(8, tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.vis, 10, "%d", (int)(atof(tmp)*10));
     }
-    GetXMLBuffer(strline, "u", m_zhobtmind.u, 10);
-    GetXMLBuffer(strline, "wd", m_zhobtmind.wd, 10);
-    GetXMLBuffer(strline, "wf", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.wf, 10, "%d", (int)(atof(tmp)*10));
-    GetXMLBuffer(strline, "r", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.r, 10, "%d", (int)(atof(tmp)*10));
-    GetXMLBuffer(strline, "vis", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.vis, 10, "%d", (int)(atof(tmp)*10));
+
 
     STRCPY(m_buffer, sizeof(m_buffer), strline);
 

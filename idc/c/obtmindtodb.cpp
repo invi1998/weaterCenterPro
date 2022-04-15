@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    PActive.AddPInfo(5000, "obtmindtodb");        // 进程的心跳时间10s
+    PActive.AddPInfo(30, "obtmindtodb");        // 进程的心跳时间10s
 
     // 业务处理主函数
     _obtmindtodb(argv[1], argv[2], argv[3]);
@@ -69,7 +69,7 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
 {
     CDir Dir;
     // 打开目录
-    if(Dir.OpenDir(pathname, "*.xml") == false)
+    if(Dir.OpenDir(pathname, "*.xml,*csv") == false)
     {
         logfile.Write("Dir.OpenDir(%s, \"*.xml\") failed\n", pathname);
         return false;
@@ -82,6 +82,7 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
     int totalcount = 0;         // 文件的总记录数
     int insertcount = 0;        // 成功插入的记录数
     CTimer Timer;               // 计时器，记录每个数据文件的处理耗时
+    int fileType = -1;              // 文件类型， 0 - xml; 1 - csv
 
     while (true)
     {
@@ -89,6 +90,15 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
         if(Dir.ReadDir() == false)
         {
             break;
+        }
+
+        if(MatchStr(Dir.m_FileName, "*.xml") == true)
+        {
+            fileType = 0;
+        }
+        else if(MatchStr(Dir.m_FileName, "*.csv") == true)
+        {
+            fileType = 1;
         }
         
         // 判断数据库是否已经连接，如果已经连接，就不用再连数据库了(m_state与数据库的连接状态，0-未连接，1-已连接)
@@ -138,19 +148,29 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
         while (1)
         {
             // 处理文件中的每一行
-            // 读取文件的一行到strbuffer中，其中以 “</endl>”为字符串结束标志（为行读取结束标志）
-            if(File.FFGETS(strbuffer, 1000, "<endl/>") == false) break;
+            if(fileType == 0)
+            {
+                // 读取文件的一行到strbuffer中，其中以 “</endl>”为字符串结束标志（为行读取结束标志）
+                if(File.FFGETS(strbuffer, 1000, "<endl/>") == false) break;
+            }
+            else if (fileType == 1)
+            {
+                // 读取文件的一行到strbuffer中，其中以 “</endl>”为字符串结束标志（为行读取结束标志）
+                if(File.Fgets(strbuffer, 1000, true) == false) break;
+                if (strstr(strbuffer, "站点") != 0) continue;       // 扔掉文件中的第一行
+            }
+            
 
             totalcount++;
 
-            zhobtmindObj.SplitBuffer(strbuffer);
+            zhobtmindObj.SplitBuffer(strbuffer, fileType);
 
             if(zhobtmindObj.InsertTable() == true) insertcount++;
 
         }
 
         // 删除文件，提交事务
-        // File.CloseAndRemove();
+        File.CloseAndRemove();
         conn.commit();
 
         logfile.Write("已处理文件数%s(totalcount = %d, insertcount=%d), 耗时%.2f秒\n", Dir.m_FullFileName, totalcount, insertcount, Timer.Elapsed());
