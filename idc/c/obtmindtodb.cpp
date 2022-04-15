@@ -93,6 +93,10 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
 
     CFile File;
 
+    int totalcount = 0;         // 文件的总记录数
+    int insertcount = 0;        // 成功插入的记录数
+    CTimer Timer;               // 计时器，记录每个数据文件的处理耗时
+
     while (true)
     {
         // 读取目录，得到一个数据文件名
@@ -134,6 +138,8 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
             stmt.bindin(9,stzhobtmind.vis,10);
         }
 
+        totalcount, insertcount = 0;
+
         // 打开文件
 
         if(File.Open(Dir.m_FullFileName, "r") == false)
@@ -173,6 +179,8 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
                 break;
             }
 
+            totalcount++;
+
             // 初始化结构体
             memset(&stzhobtmind, 0, sizeof(struct st_zhobtmind));
             GetXMLBuffer(strbuffer, "obtid", stzhobtmind.obtid, 10);
@@ -210,11 +218,18 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
                     logfile.Write("stmt.execute() failed.\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
                 }
             }
+            else
+            {
+                insertcount++;
+            }
         }
 
         // 删除文件，提交事务
         // File.CloseAndRemove();
         conn.commit();
+
+        logfile.Write("已处理文件数%s(totalcount = %d, insertcount=%d), 耗时%.2f秒\n", Dir.m_FullFileName, totalcount, insertcount, Timer.Elapsed());
+
     }
     
     return true;
