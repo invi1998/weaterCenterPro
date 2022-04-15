@@ -20,7 +20,7 @@ MYSQLCPP = /project/public/db/mysql/_mysql.cpp
 CFLAGS = -g
 
 # 需要编译的程序
-all:crtsurfdata obtcodetodb
+all:crtsurfdata obtcodetodb obtmindtodb
 
 # 这个程序的编译规则
 # 编译命令（在这个程序中使用了开发框架的头文件，所以需要把开发框架的头文件目录给指定出来,然后开发框架的cpp文件我们给他直接包含进来编译）
@@ -33,6 +33,10 @@ obtcodetodb:obtcodetodb.cpp
 	g++ $(CFLAGS) -o obtcodetodb obtcodetodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
 	cp obtcodetodb ../bin/.
 
+obtmindtodb:obtmindtodb.cpp
+	g++ $(CFLAGS) -o obtmindtodb obtmindtodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
+	cp obtmindtodb ../bin/.
+
 # 编译的清理
 clean:
-	rm -f crtsurfdata obtcodetodb
+	rm -f crtsurfdata obtcodetodb obtmindtodb

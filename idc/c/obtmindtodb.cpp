@@ -11,6 +11,9 @@ CPActive PActive;
 
 void EXIT(int sig);
 
+// 业务处理主函数
+bool _obtmindtodb(const char* pathname, const char* connstr, const char* charset);
+
 int main(int argc, char* argv[])
 {
 
@@ -45,7 +48,10 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    PActive.AddPInfo(10, "obtcodetodb");        // 进程的心跳时间10s
+    PActive.AddPInfo(30, "obtmindtodb");        // 进程的心跳时间10s
+
+    // 业务处理主函数
+    _obtmindtodb(argv[1], argv[2], argv[3]);
 
     return 0;
 }
@@ -57,4 +63,38 @@ void EXIT(int sig)
   conn.disconnect();
 
   exit(0);
+}
+
+// 业务处理主函数
+bool _obtmindtodb(const char* pathname, const char* connstr, const char* charset)
+{
+    CDir Dir;
+    // 打开目录
+    if(Dir.OpenDir(pathname, "*.xml") == false)
+    {
+        logfile.Write("Dir.OpenDir(%s, \"*.xml\") failed\n", pathname);
+        return false;
+    }
+
+    while (true)
+    {
+        // 读取目录，得到一个数据文件名
+        if(Dir.ReadDir() == false)
+        {
+            break;
+        }
+        logfile.Write("filename = %s\n", Dir.m_FullFileName);
+
+        // 打开文件
+        
+        while (1)
+        {
+            // 处理文件中的每一行
+        }
+
+        // 删除文件，提交事务
+        
+    }
+    
+    return true;
 }
