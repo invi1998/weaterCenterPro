@@ -20,12 +20,128 @@ struct st_zhobtmind
   char wf[11];         // 风速：单位0.1m/s。
   char r[11];          // 降雨量：0.1mm。
   char vis[11];        // 能见度：0.1米。
-}stzhobtmind;
+};
 
 void EXIT(int sig);
 
 // 业务处理主函数
 bool _obtmindtodb(const char* pathname, char* connstr, char* charset);
+
+class CZHOBTMIND
+{
+public:
+    connection  *m_conn;        // 数据库连接
+    CLogFile *m_logfile;        // 日志
+
+    sqlstatement m_stmt;        // 插入表操作的sql
+
+    char m_buffer[1024];             // 从文件中读取到的一行
+    
+    struct st_zhobtmind m_zhobtmind;    // 全国站点分钟观测数据结构
+    
+public:
+    CZHOBTMIND();
+    ~CZHOBTMIND();
+
+    CZHOBTMIND(connection *conn, CLogFile *logfile);
+
+    void BindConnLog(connection *conn, CLogFile *logfile);      // 把connection和CLogFile的地址传递进去
+    bool SplitBuffer(char *strline);            // 把从哪文件中读取到的一行数据拆分到m_zhobtmind结构体中
+    bool InsertTable();                         // 把m_zhobtmind结构体中的数据插入到T_ZHOBTMIND表中
+};
+
+CZHOBTMIND::CZHOBTMIND()
+{
+    m_conn = nullptr;
+    m_logfile = nullptr;
+}
+
+CZHOBTMIND::CZHOBTMIND(connection *conn, CLogFile *logfile)
+{
+    m_conn = conn;
+    m_logfile = logfile;
+}
+
+CZHOBTMIND::~CZHOBTMIND()
+{
+}
+
+void CZHOBTMIND::BindConnLog(connection *conn, CLogFile *logfile)
+{
+    m_conn = conn;
+    m_logfile = logfile;
+}
+
+// 把从哪文件中读取到的一行数据拆分到m_zhobtmind结构体中
+bool CZHOBTMIND::SplitBuffer(char *strline)
+{
+    // 初始化结构体
+    memset(&m_zhobtmind, 0, sizeof(struct st_zhobtmind));
+    GetXMLBuffer(strline, "obtid", m_zhobtmind.obtid, 10);
+    GetXMLBuffer(strline, "ddatetime", m_zhobtmind.ddatetime, 14);
+    char tmp[11];       // 定义一个临时变量
+    GetXMLBuffer(strline, "t", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
+    if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+    {
+        // 然后把它转换一下，存入结构体中去
+        snprintf(m_zhobtmind.t, 10, "%d", (int)(atof(tmp)*10));
+    }
+    GetXMLBuffer(strline, "p", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
+    if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
+    {
+        // 然后把它转换一下，存入结构体中去
+        snprintf(m_zhobtmind.p, 10, "%d", (int)(atof(tmp)*10));
+    }
+    GetXMLBuffer(strline, "u", m_zhobtmind.u, 10);
+    GetXMLBuffer(strline, "wd", m_zhobtmind.wd, 10);
+    GetXMLBuffer(strline, "wf", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.wf, 10, "%d", (int)(atof(tmp)*10));
+    GetXMLBuffer(strline, "r", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.r, 10, "%d", (int)(atof(tmp)*10));
+    GetXMLBuffer(strline, "vis", tmp, 10); if(strlen(tmp) > 0) snprintf(m_zhobtmind.vis, 10, "%d", (int)(atof(tmp)*10));
+
+    STRCPY(m_buffer, sizeof(m_buffer), strline);
+
+    return true;
+}
+
+// 把m_zhobtmind结构体中的数据插入到T_ZHOBTMIND表中
+bool CZHOBTMIND::InsertTable()
+{
+    // 只有当stmt对象没有绑定数据库对象的时候，才进行绑定(与数据库连接的绑定状态，0-未绑定，1-已绑定)
+    if(m_stmt.m_state == 0)
+    {
+        m_stmt.connect(m_conn);
+        m_stmt.prepare("insert into T_ZHOBTMIND(obtid, ddatetime, t, p, u, wd, wf, r, vis)\
+        values(:1, str_to_date(:2, '%%Y%%m%%d%%H%%i%%s'), :3, :4, :5, :6, :7, :8, :9)");
+        
+        // 绑定参数
+        m_stmt.bindin(1, m_zhobtmind.obtid, 10);
+        m_stmt.bindin(2, m_zhobtmind.ddatetime, 14);
+        m_stmt.bindin(3, m_zhobtmind.t,10);
+        m_stmt.bindin(4, m_zhobtmind.p,10);
+        m_stmt.bindin(5, m_zhobtmind.u,10);
+        m_stmt.bindin(6, m_zhobtmind.wd,10);
+        m_stmt.bindin(7, m_zhobtmind.wf,10);
+        m_stmt.bindin(8, m_zhobtmind.r,10);
+        m_stmt.bindin(9, m_zhobtmind.vis,10);
+    }
+
+    // 把结构体中的数据插入表中
+    if(m_stmt.execute() != 0)
+    {
+        // 失败的情况有哪些？是否全部的失败都需要写日志？
+        // 失败的原因主要有二，1是记录重复，2是数据内容非法
+        // 如果失败了怎么办？程序是否需要继续？是否rollback？是否返回false?
+        // 如果失败的原因是内容非法，记录非法内容日志后继续，如果记录重复，不必记录日志，并且程序继续往下走
+        if(m_stmt.m_cda.rc != 1062)
+        {
+            // 不是记录重复导致的错误
+            m_logfile->Write("Buffer = %s\n", m_buffer);
+            m_logfile->Write("m_stmt.execute() failed.\n%s\n%s\n", m_stmt.m_sql, m_stmt.m_cda.message);
+        }
+        return false;
+    }
+    return true;
+}
 
 int main(int argc, char* argv[])
 {
@@ -81,7 +197,6 @@ void EXIT(int sig)
 // 业务处理主函数
 bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
 {
-    sqlstatement stmt;      // 数据库连接对象
     CDir Dir;
     // 打开目录
     if(Dir.OpenDir(pathname, "*.xml") == false)
@@ -91,6 +206,8 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
     }
 
     CFile File;
+
+    CZHOBTMIND zhobtmindObj(&conn, &logfile);
 
     int totalcount = 0;         // 文件的总记录数
     int insertcount = 0;        // 成功插入的记录数
@@ -115,25 +232,6 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
             }
             logfile.Write("connect database(%s) ok\n", connstr);
 
-        }
-
-        // 只有当stmt对象没有绑定数据库对象的时候，才进行绑定(与数据库连接的绑定状态，0-未绑定，1-已绑定)
-        if(stmt.m_state == 0)
-        {
-            stmt.connect(&conn);
-            stmt.prepare("insert into T_ZHOBTMIND(obtid, ddatetime, t, p, u, wd, wf, r, vis)\
-            values(:1, str_to_date(:2, '%%Y%%m%%d%%H%%i%%s'), :3, :4, :5, :6, :7, :8, :9)");
-            
-            // 绑定参数
-            stmt.bindin(1, stzhobtmind.obtid, 10);
-            stmt.bindin(2, stzhobtmind.ddatetime, 14);
-            stmt.bindin(3,stzhobtmind.t,10);
-            stmt.bindin(4,stzhobtmind.p,10);
-            stmt.bindin(5,stzhobtmind.u,10);
-            stmt.bindin(6,stzhobtmind.wd,10);
-            stmt.bindin(7,stzhobtmind.wf,10);
-            stmt.bindin(8,stzhobtmind.r,10);
-            stmt.bindin(9,stzhobtmind.vis,10);
         }
 
         totalcount, insertcount = 0;
@@ -175,47 +273,10 @@ bool _obtmindtodb(const char* pathname, char* connstr, char* charset)
 
             totalcount++;
 
-            // 初始化结构体
-            memset(&stzhobtmind, 0, sizeof(struct st_zhobtmind));
-            GetXMLBuffer(strbuffer, "obtid", stzhobtmind.obtid, 10);
-            GetXMLBuffer(strbuffer, "ddatetime", stzhobtmind.ddatetime, 14);
-            char tmp[11];       // 定义一个临时变量
-            GetXMLBuffer(strbuffer, "t", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
-            if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
-            {
-                // 然后把它转换一下，存入结构体中去
-                snprintf(stzhobtmind.t, 10, "%d", (int)(atof(tmp)*10));
-            }
-            GetXMLBuffer(strbuffer, "p", tmp, 10);      // xml解析出来的内容放到临时变量tmp中
-            if(strlen(tmp) > 0)     // 如果取出来的临时变量不为空（表示有数据）
-            {
-                // 然后把它转换一下，存入结构体中去
-                snprintf(stzhobtmind.p, 10, "%d", (int)(atof(tmp)*10));
-            }
-            GetXMLBuffer(strbuffer, "u", stzhobtmind.u, 10);
-            GetXMLBuffer(strbuffer, "wd", stzhobtmind.wd, 10);
-            GetXMLBuffer(strbuffer, "wf", tmp, 10); if(strlen(tmp) > 0) snprintf(stzhobtmind.wf, 10, "%d", (int)(atof(tmp)*10));
-            GetXMLBuffer(strbuffer, "r", tmp, 10); if(strlen(tmp) > 0) snprintf(stzhobtmind.r, 10, "%d", (int)(atof(tmp)*10));
-            GetXMLBuffer(strbuffer, "vis", tmp, 10); if(strlen(tmp) > 0) snprintf(stzhobtmind.vis, 10, "%d", (int)(atof(tmp)*10));
+            zhobtmindObj.SplitBuffer(strbuffer);
 
-            // 把结构体中的数据插入表中
-            if(stmt.execute() != 0)
-            {
-                // 失败的情况有哪些？是否全部的失败都需要写日志？
-                // 失败的原因主要有二，1是记录重复，2是数据内容非法
-                // 如果失败了怎么办？程序是否需要继续？是否rollback？是否返回false?
-                // 如果失败的原因是内容非法，记录非法内容日志后继续，如果记录重复，不必记录日志，并且程序继续往下走
-                if(stmt.m_cda.rc != 1062)
-                {
-                    // 不是记录重复导致的错误
-                    logfile.Write("Buffer = %s\n", strbuffer);
-                    logfile.Write("stmt.execute() failed.\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
-                }
-            }
-            else
-            {
-                insertcount++;
-            }
+            if(zhobtmindObj.InsertTable() == true) insertcount++;
+
         }
 
         // 删除文件，提交事务
