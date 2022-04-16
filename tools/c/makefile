@@ -4,10 +4,22 @@ PUBINCL = -I/project/public
 # 开发框架cpp文件名，。这里也直接包含进来，没有采用连接库，方便调试
 PUBcpp = /project/public/_public.cpp
 
+# 指定mysql的头文件存放路径
+MYSQLINCL = -I/usr/local/mysql/include -I/project/public/db/mysql
+
+# mysql库文件的保存路径
+MYSQLLIB = -L/usr/local/mysql/lib
+
+# mysql链接库
+MYSQLLIBS = -lmysqlclient
+
+# 开发框架的mysql的cpp文件名，这里直接包含进来，没有采用链接库，是为了方便调试
+MYSQLCPP = /project/public/db/mysql/_mysql.cpp
+
 # 编译参数
 CFLAGS = -g
 
-all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver
+all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver execsql
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp
@@ -47,5 +59,9 @@ fileserver:fileserver.cpp
 	g++ $(CFLAGS) -o fileserver fileserver.cpp $(PUBINCL) $(PUBcpp) -lm -lc
 	cp fileserver ../bin/.
 
+execsql:execsql.cpp
+	g++ $(CFLAGS) -o execsql execsql.cpp $(PUBINCL) $(PUBcpp) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
+	cp execsql ../bin/.
+
 clean:
-	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver tcpgetfiles
+	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver tcpgetfiles execsql

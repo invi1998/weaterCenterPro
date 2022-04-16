@@ -41,3 +41,8 @@
 # 把全国站点参数数据保存到数据库表中，如果站点不存在则插入，站点已存在则更新。
 /project/tools/bin/procctl 300 /project/idc/bin/obtcodetodb /project/idc/ini/stcode.ini "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/obtcodetodb.log
 
+# 把全国站点分钟观测数据保存到数据库的T_ZHOBTMIND表中，数据只插入，不更新。
+/project/tools/bin/procctl 10 /project/idc/bin/obtmindtodb /idcdata/surfdata "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/obtmindtodb.log
+
+# 清理T_ZHOBTMIND?表中120分之前的数据，防止磁盘空间被撑满。
+/project/tools/bin/procctl 120 /project/tools/bin/execsql /project/idc/sql/cleardata.sql "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/execsql.log
