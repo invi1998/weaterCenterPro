@@ -33,6 +33,8 @@ int ifieldlen[MAXFIELDCOUNT];               // 结果集字段值的最大长度
 int ifieldcount;                            // strfieldname和ifieldlen数组中有效字段的个数
 int incfieldpos = -1;                       // 递增字段在结果集数组中的位置
 
+char strxmlfilename[301];                   // xml文件名
+
 CLogFile logfile;
 
 CPActive PActive;
@@ -52,6 +54,9 @@ bool _dminingmysql();
 
 // 判断当前时间是否在程序运行的时间区间内
 bool instarttime();
+
+// 生成xml文件名
+void crtxmlfilename();
 
 int main(int argc,char *argv[])
 {
@@ -271,6 +276,9 @@ bool _dminingmysql()
         return false;
     }
 
+    CFile File;     // 用于操作xml文件
+
+
     // 循环获取结果集
     while (true)
     {
@@ -278,12 +286,44 @@ bool _dminingmysql()
 
         if(stmt.next() != 0) break;
 
+        // 只有单结果集不为空的时候，才生成这个xml文件
+        // 先判断文件是否打开
+        if(File.IsOpened() == false)
+        {
+            // 打开文件之间，先把文件名拼接出来
+            crtxmlfilename();           // 生成xml文件名
+        
+            if(File.OpenForRename(strxmlfilename, "w+") == false)
+            {
+                logfile.Write("File.OpenForRename(\"%s\", \"w+\") failed \n", strxmlfilename);
+                return false;
+            }
+
+            // 成功打开文件之后，把xml的data标签写进去
+            File.Fprintf("<data>\n");
+        }
+
         // 拿到结果集后，将结果集的字段拼接成xml然后写入到对应的输出文件中
         for(int i = 0; i < ifieldcount; i++)
         {
-            logfile.WriteEx("<%s>%s</%s>", strfieldname[i], strfieldbvalue[i], strfieldname[i]);
+            File.Fprintf("<%s>%s</%s>", strfieldname[i], strfieldbvalue[i], strfieldname[i]);
         }
-        logfile.WriteEx("<endl/>\n");
+        File.Fprintf("<endl/>\n");
+    }
+
+    if(File.IsOpened() == true)
+    {
+        // 关闭文件之前，先写入数据结束标签
+        File.Fprintf("</data>\n");
+
+        if(File.CloseAndRename() == false)
+        {
+            logfile.Write("File.CloseAndRename() failed\n");
+            return false;
+        }
+
+        // 成功：把xml文件名和记录总数写日志
+        logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc);
     }
     
 
@@ -305,4 +345,17 @@ bool instarttime()
     }
 
     return true;
+}
+
+// 生成xml文件名
+void crtxmlfilename()
+{
+    // xml全路径文件名 = starg.outpath + starg.bfilename + 当前时间 + starg.efilename+ .xml
+    
+    // 获取当前时间
+    char strLocalTime[21];
+    memset(strLocalTime, 0, sizeof(strLocalTime));
+    LocalTime(strLocalTime, "yyyymmddhh24miss");
+
+    SNPRINTF(strxmlfilename, 300, sizeof(strxmlfilename), "%s/%s_%s_%s.xml", starg.outpath, starg.bfilename, strLocalTime, starg.efilename);
 }
