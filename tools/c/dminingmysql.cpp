@@ -4,8 +4,9 @@
 #include "_mysql.h"
 
 #define MAXFIELDCOUNT   100     // 结果集字段的最大数
-#define MAXFIELDLEN     500     // 结果集字段值得最大长度
+// #define MAXFIELDLEN     500     // 结果集字段值得最大长度
 
+int MAXFIELDLEN = -1;     // 结果集字段值得最大长度
 
 // 程序运行参数的结构体。
 struct st_arg
@@ -34,6 +35,10 @@ int incfieldpos = -1;                       // 递增字段在结果集数组中
 
 CLogFile logfile;
 
+CPActive PActive;
+
+connection conn;
+
 // 程序退出和信号2、15的处理函数。
 void EXIT(int sig);
 
@@ -44,6 +49,9 @@ bool _xmltoarg(char *strxmlbuffer);
 
 // 数据抽取的主函数。
 bool _dminingmysql();
+
+// 判断当前时间是否在程序运行的时间区间内
+bool instarttime();
 
 int main(int argc,char *argv[])
 {
@@ -62,6 +70,29 @@ int main(int argc,char *argv[])
 
     // 解析xml，得到程序运行的参数。
     if (_xmltoarg(argv[2])==false) return -1;
+
+    // 判断当前时间是否在程序运行的时间区间内
+    if(instarttime() == false)
+    {
+        return 0;
+    }
+
+    // PActive.AddPInfo(starg.timeout, starg.pname);       // 把进程心跳写入共享内存
+
+    // 连接数据库
+    if(conn.connecttodb(starg.connstr, starg.charset) != 0)
+    {
+        logfile.Write("connect database(%s) failed\n%s\n", starg.connstr, conn.m_cda.message);
+        return -1;
+    }
+
+    logfile.Write("connect database(%s) ok\n", starg.connstr);
+
+    // 执行上传文件功能的主函数
+    if(_dminingmysql() == false)
+    {
+        return -1;
+    }
 
     return 0;
 }
@@ -165,6 +196,15 @@ bool _xmltoarg(char *strxmlbuffer)
     for(int i = 0; i < Cmdstr.CmdCount(); i++)
     {
         Cmdstr.GetValue(i, &ifieldlen[i]);
+        if(ifieldlen[i] > MAXFIELDLEN)
+        {
+            // ifieldlen[i] = MAXFIELDLEN;     // 虽然这样做极端情况下可能会照成取到的字段被截断，但是至少不会造成内存溢出（数组边界溢出）
+            // 如果觉得 MAXFIELDLEN 不够大，可以根据实际情况改大点
+
+            // 如果 MAXFIELDLEN 是变量，这样会更灵活和节省内存
+            MAXFIELDLEN = ifieldlen[i];
+        }
+
     }
 
     ifieldcount = Cmdstr.CmdCount();
@@ -215,6 +255,57 @@ bool _xmltoarg(char *strxmlbuffer)
 // 数据抽取的主函数。
 bool _dminingmysql()
 {
+    // 创建sql执行对象
+    sqlstatement stmt(&conn);
+    // 准备sql语句
+    stmt.prepare(starg.selectsql);
+    // 绑定sql语句中的变量地址
+    // 先定义一个字符串数组，把结果集绑定到这个字符串数组上(数组的大小用抽取字段的个数，然后字符串的大小用之前定义的宏+1)
+    char strfieldbvalue[ifieldcount][MAXFIELDLEN + 1];    // 抽取数据的sql执行之后，存放结果集字段的数组
+    // 采用一个循环，将sql的输出结果集绑定到对应的数组变量中
+    for(int i = 0; i < ifieldcount; i++)
+    {
+        stmt.bindout(i, strfieldbvalue[i-1], ifieldlen[i-1]);
+    }
+
+    if(stmt.execute() != 0)
+    {
+        logfile.Write("stmt.execute() failed\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
+        return false;
+    }
+
+    // 循环获取结果集
+    while (true)
+    {
+        memset(strfieldbvalue, 0, sizeof(strfieldbvalue));
+
+        if(stmt.next() != 0) break;
+
+        // 拿到结果集后，将结果集的字段拼接成xml然后写入到对应的输出文件中
+        for(int i = 0; i < ifieldcount; i++)
+        {
+            logfile.WriteEx("<%s>%s</%s>", strfieldname[i-1], strfieldbvalue[i-1], strfieldname[i-1]);
+        }
+        logfile.WriteEx("<endl/>\n");
+    }
+    
+
+    return true;
+}
+
+// 判断当前时间是否在程序运行的时间区间内
+bool instarttime()
+{
+    // 程序运行的时间区间，例如 02， 13 表示：如果程序启动时，命中02时，和13时这两个时间就运行。其他时间不运行
+    if(strlen(starg.starttime) != 0)        // 如果这个参数为空，表示没有时间限制，任何时间都可以运行
+    {
+        char strHH24[3];
+        memset(strHH24, 0, sizeof(strHH24));
+
+        LocalTime(strHH24, "hh24");     // 获取当前小时，采用24时间制
+
+        if(strstr(starg.starttime, strHH24) == 0) return false;     // 如果当前时间不在参数时间里，就返回false
+    }
 
     return true;
 }
