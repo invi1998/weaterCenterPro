@@ -35,6 +35,8 @@ int incfieldpos = -1;                       // 递增字段在结果集数组中
 
 char strxmlfilename[301];                   // xml文件名
 
+long imaxincvalue;                          // 从文件 starg.incfilename中获取到的已经抽取的数据的最大自增字段id
+
 CLogFile logfile;
 
 CPActive PActive;
@@ -57,6 +59,12 @@ bool instarttime();
 
 // 生成xml文件名
 void crtxmlfilename();
+
+// 从starg.incfilename文件中获取已抽取数据的最大id
+bool readincfile();
+
+// 把已经抽取到的数据中的最大的自增字段的id写入到starg.infilename文件中
+bool writeincfile();
 
 int main(int argc,char *argv[])
 {
@@ -82,7 +90,7 @@ int main(int argc,char *argv[])
         return 0;
     }
 
-    // PActive.AddPInfo(starg.timeout, starg.pname);       // 把进程心跳写入共享内存
+    PActive.AddPInfo(starg.timeout, starg.pname);       // 把进程心跳写入共享内存
 
     // 连接数据库
     if(conn.connecttodb(starg.connstr, starg.charset) != 0)
@@ -257,6 +265,9 @@ bool _xmltoarg(char *strxmlbuffer)
 // 数据抽取的主函数。
 bool _dminingmysql()
 {
+    // 从starg.incfilename文件中获取已抽取数据的最大id
+    readincfile();
+
     // 创建sql执行对象
     sqlstatement stmt(&conn);
     // 准备sql语句
@@ -270,14 +281,22 @@ bool _dminingmysql()
         stmt.bindout(i+1, strfieldbvalue[i], ifieldlen[i]);
     }
 
+    // 如果是增量抽取，绑定输入参数id
+    if(strlen(starg.incfield) != 0)
+    {
+        stmt.bindin(1, &imaxincvalue);
+    }
+
     if(stmt.execute() != 0)
     {
         logfile.Write("stmt.execute() failed\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
         return false;
     }
 
-    CFile File;     // 用于操作xml文件
+    // 这里加一个心跳（因为执行sql语句需要时间）
+    PActive.UptATime();
 
+    CFile File;     // 用于操作xml文件
 
     // 循环获取结果集
     while (true)
@@ -310,6 +329,7 @@ bool _dminingmysql()
         }
         File.Fprintf("<endl/>\n");
 
+        // 如果记录数达到1000行就切换一个xml文件
         // 这做一个判断，如果结果集的数量超过了1000,就关闭当前文件，
         // 这样在处理后续的结果集的时候，就会重新产生新的文件，从而实现了每个xml文件最多只记录1000条数据
         if(stmt.m_cda.rpc%1000 == 0)
@@ -325,7 +345,14 @@ bool _dminingmysql()
 
             // 成功：把xml文件名和记录总数写日志
             logfile.Write("成功生成文件%s(1000)\n", strxmlfilename);
+
+            // 这里每写一个文件，就给他做一次心跳
+            PActive.UptATime();
         }
+
+        // 更新自增字段的最大值
+        // 每次从结果集获取一条记录之后，把自增字段跟之前保存的最大id对比一下，保存更大id值
+        if(imaxincvalue < atol(strfieldbvalue[incfieldpos])) imaxincvalue = atol(strfieldbvalue[incfieldpos]);
     }
 
     if(File.IsOpened() == true)
@@ -343,6 +370,11 @@ bool _dminingmysql()
         logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc%1000);
     }
     
+    // 把最大的自增字段的值写入到 starg.incfilename文件中
+    if(stmt.m_cda.rpc > 0)     // 这里可以先做一个判断，有结果集才去写这个id
+    {
+        writeincfile();
+    }
 
     return true;
 }
@@ -377,4 +409,57 @@ void crtxmlfilename()
     static int iseq = 0;
 
     SNPRINTF(strxmlfilename, 300, sizeof(strxmlfilename), "%s/%s_%s_%s_%d.xml", starg.outpath, starg.bfilename, strLocalTime, starg.efilename, iseq++);
+}
+
+// 从starg.incfilename文件中获取已抽取数据的最大id
+bool readincfile()
+{
+    imaxincvalue = 0;
+
+    // 如果starg.incfield这个参数为空，表示不是增量抽取
+    if(strlen(starg.incfield) == 0) return true;
+
+    CFile File;
+
+    if(File.Open(starg.incfilename, "r") == false)
+    {
+        // 如果文件打开失败，有两种可能
+        // 1：程序第一次运行程序，这种情况下，不必放回失败
+        // 2：也可能是保存这个最大id这个文件丢失了，如果是这种情况，那没办法，只能重新抽取
+        return true;
+    }
+
+    // 从文件中读取已经抽取的数据的最大id
+    char stremp[31];
+    File.FFGETS(stremp, 30);
+
+    imaxincvalue = atol(stremp);    // 将其转为整数赋值给 imaxincvalue
+
+    // 将这个最大的id吸入到日志文件中
+    logfile.Write("上次已经抽取数据的位置（%s=%ld）\n", starg.incfield, imaxincvalue);
+
+    return true;
+}
+
+// 把已经抽取到的数据中的最大的自增字段的id写入到starg.infilename文件中
+bool writeincfile()
+{
+    // 如果starg.incfield这个参数为空，表示不是增量抽取
+    if(strlen(starg.incfield) == 0) return true;
+
+    CFile File;
+
+    if(File.Open(starg.incfilename, "w+") == false)
+    {
+        logfile.Write("File.Open(%s, \"w+\") failed\n", starg.incfilename);
+        return false;
+    }
+
+    // 把已抽取数据的最大id写入文件
+    File.Fprintf("%ld", imaxincvalue);
+
+    // 关闭文件
+    File.Close();
+    
+    return true;
 }
