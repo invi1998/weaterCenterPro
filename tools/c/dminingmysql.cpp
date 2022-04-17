@@ -3,6 +3,10 @@
 #include "_public.h"
 #include "_mysql.h"
 
+#define MAXFIELDCOUNT   100     // 结果集字段的最大数
+#define MAXFIELDLEN     500     // 结果集字段值得最大长度
+
+
 // 程序运行参数的结构体。
 struct st_arg
 {
@@ -22,6 +26,11 @@ struct st_arg
   int  timeout;          // 进程心跳的超时时间。
   char pname[51];        // 进程名，建议用"dminingmysql_后缀"的方式。
 } starg;
+
+char strfieldname[MAXFIELDCOUNT][31];       // 结果集字段名数组，从starg.fieldstr中解析得到
+int ifieldlen[MAXFIELDCOUNT];               // 结果集字段值的最大长度, 从starg.fieldlen中解析得到
+int ifieldcount;                            // strfieldname和ifieldlen数组中有效字段的个数
+int incfieldpos = -1;                       // 递增字段在结果集数组中的位置
 
 CLogFile logfile;
 
@@ -139,6 +148,66 @@ bool _xmltoarg(char *strxmlbuffer)
 
     GetXMLBuffer(strxmlbuffer,"pname",starg.pname,50);     // 进程名。
     if (strlen(starg.pname)==0) { logfile.Write("pname is null.\n");  return false; }
+
+    // 创建字符串拆分的对象
+    CCmdStr Cmdstr;
+
+    // 1、把starg.fieldlen解析到ifieldlen数组中；
+    Cmdstr.SplitToCmd(starg.fieldlen, ",");
+
+    // 判断字段数是否超出MAXFIELDCOUNT的限制
+    if(Cmdstr.CmdCount() > MAXFIELDCOUNT)
+    {
+        logfile.Write("filedlen的字段数太多，超出了最大限制%d\n", MAXFIELDCOUNT);
+        return false;
+    }
+
+    for(int i = 0; i < Cmdstr.CmdCount(); i++)
+    {
+        Cmdstr.GetValue(i, &ifieldlen[i]);
+    }
+
+    ifieldcount = Cmdstr.CmdCount();
+
+    // 2、把starg.fieldstr解析到strfieldname数组中；
+    Cmdstr.SplitToCmd(starg.fieldstr, ",");
+
+    // 判断字段数是否超出 MAXFIELDCOUNT 限制
+    if(Cmdstr.CmdCount() > MAXFIELDCOUNT)
+    {
+        logfile.Write("filedlen的字段数太多，超出了最大限制%d\n", MAXFIELDCOUNT);
+        return false;
+    }
+
+    for(int i = 0; i < Cmdstr.CmdCount(); i++)
+    {
+        Cmdstr.GetValue(i, strfieldname[i], 30);
+    }
+
+    // 判断 ifieldlen 和 strfieldname 这两个数组的大小是否相同
+    if(ifieldcount != Cmdstr.CmdCount())
+    {
+        logfile.Write("fieldstr和strfieldname的元素数量不一致\n");
+        return false;
+    }
+
+    // 3、获取自增字段在结果集中的位置。
+    if(strlen(starg.incfield) != 0)
+    {
+        for(int  i = 0; i <  ifieldcount; i++)
+        {
+            if(strcmp(starg.incfield, strfieldname[i]) == 0)
+            {
+                incfieldpos = i;
+                break;
+            }
+        }
+        if(incfieldpos == -1)
+        {
+            logfile.Write("递增字段名%s不在列表%s中\n", starg.incfield, starg.fieldstr);
+            return false;
+        }
+    }
 
     return true;
 }
