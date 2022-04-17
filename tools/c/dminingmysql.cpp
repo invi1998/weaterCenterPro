@@ -89,10 +89,7 @@ int main(int argc,char *argv[])
     logfile.Write("connect database(%s) ok\n", starg.connstr);
 
     // 执行上传文件功能的主函数
-    if(_dminingmysql() == false)
-    {
-        return -1;
-    }
+    _dminingmysql();
 
     return 0;
 }
@@ -265,7 +262,7 @@ bool _dminingmysql()
     // 采用一个循环，将sql的输出结果集绑定到对应的数组变量中
     for(int i = 0; i < ifieldcount; i++)
     {
-        stmt.bindout(i, strfieldbvalue[i-1], ifieldlen[i-1]);
+        stmt.bindout(i+1, strfieldbvalue[i], ifieldlen[i]);
     }
 
     if(stmt.execute() != 0)
@@ -284,7 +281,7 @@ bool _dminingmysql()
         // 拿到结果集后，将结果集的字段拼接成xml然后写入到对应的输出文件中
         for(int i = 0; i < ifieldcount; i++)
         {
-            logfile.WriteEx("<%s>%s</%s>", strfieldname[i-1], strfieldbvalue[i-1], strfieldname[i-1]);
+            logfile.WriteEx("<%s>%s</%s>", strfieldname[i], strfieldbvalue[i], strfieldname[i]);
         }
         logfile.WriteEx("<endl/>\n");
     }
