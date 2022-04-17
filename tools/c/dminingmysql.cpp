@@ -309,6 +309,23 @@ bool _dminingmysql()
             File.Fprintf("<%s>%s</%s>", strfieldname[i], strfieldbvalue[i], strfieldname[i]);
         }
         File.Fprintf("<endl/>\n");
+
+        // 这做一个判断，如果结果集的数量超过了1000,就关闭当前文件，
+        // 这样在处理后续的结果集的时候，就会重新产生新的文件，从而实现了每个xml文件最多只记录1000条数据
+        if(stmt.m_cda.rpc%1000 == 0)
+        {
+            // 关闭文件之前，先写入数据结束标签
+            File.Fprintf("</data>\n");
+
+            if(File.CloseAndRename() == false)
+            {
+                logfile.Write("File.CloseAndRename() failed\n");
+                return false;
+            }
+
+            // 成功：把xml文件名和记录总数写日志
+            logfile.Write("成功生成文件%s(1000)\n", strxmlfilename);
+        }
     }
 
     if(File.IsOpened() == true)
@@ -323,7 +340,7 @@ bool _dminingmysql()
         }
 
         // 成功：把xml文件名和记录总数写日志
-        logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc);
+        logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc%1000);
     }
     
 
@@ -350,12 +367,14 @@ bool instarttime()
 // 生成xml文件名
 void crtxmlfilename()
 {
-    // xml全路径文件名 = starg.outpath + starg.bfilename + 当前时间 + starg.efilename+ .xml
+    // xml全路径文件名 = starg.outpath + starg.bfilename + 当前时间 + starg.efilename + 序号 + .xml
     
     // 获取当前时间
     char strLocalTime[21];
     memset(strLocalTime, 0, sizeof(strLocalTime));
     LocalTime(strLocalTime, "yyyymmddhh24miss");
 
-    SNPRINTF(strxmlfilename, 300, sizeof(strxmlfilename), "%s/%s_%s_%s.xml", starg.outpath, starg.bfilename, strLocalTime, starg.efilename);
+    static int iseq = 0;
+
+    SNPRINTF(strxmlfilename, 300, sizeof(strxmlfilename), "%s/%s_%s_%s_%d.xml", starg.outpath, starg.bfilename, strLocalTime, starg.efilename, iseq++);
 }
