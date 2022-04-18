@@ -47,6 +47,12 @@ void EXIT(int sig);
 // 业务处理主函数
 bool _xmltodb();
 
+// xml文件入库主函数，返回值 0 - 成功，其他都是失败，失败的情况有很多
+int _xmltodb(char *fullfilename, char *filename);
+
+// 把xml文件（fullFileName）从srcpath移动到dstpath参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
+bool xmltobakerr(char* fullFileName, char *srcpath, char *dstpath);
+
 int main(int argc,char *argv[])
 {
     if (argc!=3) { _help(argv); return -1; }
@@ -151,24 +157,58 @@ bool _xmltodb()
 {
     // 把数据入库的参数配置文件starg.inifilename加载到容器中
 
+    // 加载入库参数的计数器，初始化为50是为了在第一次进入循环的时候就加载参数
+    int counter = 50;
+
+    CDir Dir;
+
     while (true)
     {
-        // 打开starg.xmlpath目录
+        if(counter++ > 30)
+        {
+            counter = 0;    // 从新计数
+            // 把数据入库的参数配置文件starg.inifilename加载到vxmltotable容器中
+            if(loadxmltotable() == false) return false;
+        }
+
+        // 打开starg.xmlpath目录(不打开子目录，需要排序，最多一次打开10000个文件)
+        if(Dir.OpenDir(starg.xmlpath, "*.xml", 10000, false, true) == false)
+        {
+            logfile.Write("Dir.OpenDir(%s, \"*.xml\", 10000, false, true) failed\n", starg.xmlpath);
+            return false;
+        }
 
         
         // 遍历目录中的文件名
         while(true)
         {
             // 读取目录，得到一个xml文件
+            if(Dir.ReadDir() == false) break;
+
+            logfile.Write("处理文件%s...", Dir.m_FullFileName);
 
             // 处理xml文件
             // 调用文件处理子函数
+            int iret = _xmltodb(Dir.m_FullFileName, Dir.m_FileName);
 
             // 处理xml文件成功，写日志，备份文件
+            if(iret == 0)
+            {
+                logfile.WriteEx("   ok\n");
+
+                // 把xml文件移动到starg.xmlpathbak参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
+                if(xmltobakerr(Dir.m_FullFileName, starg.xmlpath, starg.xmlpathbak) == false) return false;
+            }
 
             // 处理文件失败。分情况讨论
+            if(iret == 1)       // iret == 1，找不到入库参数
+            {
+                logfile.WriteEx("failed. [没有配置文件入库参数]\n");
+                // 把xml文件移动到starg.xmlpatherr参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
+                if(xmltobakerr(Dir.m_FullFileName, starg.xmlpath, starg.xmlpatherr) == false) return false;
+            }
         }
-
+        break;
         sleep(starg.timetvl);
     }
     
@@ -224,4 +264,38 @@ bool findxmltotable(char *xmlfilename)
     }
 
     return false;
+}
+
+// xml文件入库主函数，返回值 0 - 成功，其他都是失败，失败的情况有很多
+int _xmltodb(char *fullfilename, char *filename)
+{
+    // 先从vxmltotable容器中查找filename的入库参数，存放在stxmltotable容器中
+    if(findxmltotable(filename) == false) return 1;
+
+    return 0;
+}
+
+// 把xml文件（fullFileName）从srcpath移动到dstpath参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
+bool xmltobakerr(char* fullFileName, char *srcpath, char *dstpath)
+{
+    // 生成一个临时变量，用于保存目标文件名
+    char dstfilename[301];
+
+    STRCPY(dstfilename, sizeof(dstfilename), fullFileName);
+
+    // 这里注意第四个参数，这里填false
+    // bloop：是否循环执行替换。
+    // 注意：
+    // 1、如果str2比str1要长，替换后str会变长，所以必须保证str有足够的空间，否则内存会溢出。
+    // 2、如果str2中包含了str1的内容，且bloop为true，这种做法存在逻辑错误，UpdateStr将什么也不做
+    UpdateStr(dstfilename, srcpath, dstpath, false);
+
+    // 然后移动文件
+    if(RENAME(fullFileName, dstfilename) == false)
+    {
+        logfile.Write("RENAME(%s, %s) failed\n", fullFileName, dstfilename);
+        return false;
+    }
+
+    return true;
 }
