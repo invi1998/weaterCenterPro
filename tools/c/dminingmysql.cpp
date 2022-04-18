@@ -41,7 +41,7 @@ CLogFile logfile;
 
 CPActive PActive;
 
-connection conn;
+connection conn, conn1;
 
 // 程序退出和信号2、15的处理函数。
 void EXIT(int sig);
@@ -100,6 +100,18 @@ int main(int argc,char *argv[])
     }
 
     logfile.Write("connect database(%s) ok\n", starg.connstr);
+
+    if(strlen(starg.connstr1) != 0)
+    {
+        // 连接数据库
+        if(conn1.connecttodb(starg.connstr1, starg.charset) != 0)
+        {
+            logfile.Write("connect database(%s) failed\n%s\n", starg.connstr1, conn1.m_cda.message);
+            return -1;
+        }
+
+        logfile.Write("connect database(%s) ok\n", starg.connstr1);
+    }
 
     // 执行上传文件功能的主函数
     _dminingmysql();
@@ -257,6 +269,12 @@ bool _xmltoarg(char *strxmlbuffer)
             logfile.Write("递增字段名%s不在列表%s中\n", starg.incfield, starg.fieldstr);
             return false;
         }
+
+        if(strlen(starg.incfilename) == 0 && strlen(starg.connstr1) == 0)
+        {
+            logfile.Write("incfilename 和 connstr1 参数必须二选一（增量字段是保存在本地还是远程数据库）\n");
+            return false;
+        }
     }
 
     return true;
@@ -329,10 +347,10 @@ bool _dminingmysql()
         }
         File.Fprintf("<endl/>\n");
 
-        // 如果记录数达到1000行就切换一个xml文件
-        // 这做一个判断，如果结果集的数量超过了1000,就关闭当前文件，
-        // 这样在处理后续的结果集的时候，就会重新产生新的文件，从而实现了每个xml文件最多只记录1000条数据
-        if(stmt.m_cda.rpc%1000 == 0)
+        // 如果记录数达到starg.maxcount行就切换一个xml文件
+        // 这做一个判断，如果结果集的数量超过了starg.maxcount,就关闭当前文件，
+        // 这样在处理后续的结果集的时候，就会重新产生新的文件，从而实现了每个xml文件最多只记录starg.maxcount条数据
+        if( starg.maxcount > 0 && stmt.m_cda.rpc%starg.maxcount == 0)
         {
             // 关闭文件之前，先写入数据结束标签
             File.Fprintf("</data>\n");
@@ -344,7 +362,7 @@ bool _dminingmysql()
             }
 
             // 成功：把xml文件名和记录总数写日志
-            logfile.Write("成功生成文件%s(1000)\n", strxmlfilename);
+            logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, starg.maxcount);
 
             // 这里每写一个文件，就给他做一次心跳
             PActive.UptATime();
@@ -352,7 +370,7 @@ bool _dminingmysql()
 
         // 更新自增字段的最大值
         // 每次从结果集获取一条记录之后，把自增字段跟之前保存的最大id对比一下，保存更大id值
-        if(imaxincvalue < atol(strfieldbvalue[incfieldpos])) imaxincvalue = atol(strfieldbvalue[incfieldpos]);
+        if(strlen(starg.connstr1) != 0 && (imaxincvalue < atol(strfieldbvalue[incfieldpos]))) imaxincvalue = atol(strfieldbvalue[incfieldpos]);
     }
 
     if(File.IsOpened() == true)
@@ -366,8 +384,16 @@ bool _dminingmysql()
             return false;
         }
 
-        // 成功：把xml文件名和记录总数写日志
-        logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc%1000);
+        if(starg.maxcount == 0)
+        {
+            // 成功：把xml文件名和记录总数写日志
+            logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc);
+        }
+        else
+        {
+            // 成功：把xml文件名和记录总数写日志
+            logfile.Write("成功生成文件%s(%d)\n", strxmlfilename, stmt.m_cda.rpc%starg.maxcount);
+        }
     }
     
     // 把最大的自增字段的值写入到 starg.incfilename文件中
@@ -419,24 +445,46 @@ bool readincfile()
     // 如果starg.incfield这个参数为空，表示不是增量抽取
     if(strlen(starg.incfield) == 0) return true;
 
-    CFile File;
-
-    if(File.Open(starg.incfilename, "r") == false)
+    if(strlen(starg.connstr1) == 0)     // 采用本地文件方式存储id
     {
-        // 如果文件打开失败，有两种可能
-        // 1：程序第一次运行程序，这种情况下，不必放回失败
-        // 2：也可能是保存这个最大id这个文件丢失了，如果是这种情况，那没办法，只能重新抽取
-        return true;
+        CFile File;
+
+        if(File.Open(starg.incfilename, "r") == false)
+        {
+            // 如果文件打开失败，有两种可能
+            // 1：程序第一次运行程序，这种情况下，不必放回失败
+            // 2：也可能是保存这个最大id这个文件丢失了，如果是这种情况，那没办法，只能重新抽取
+            return true;
+        }
+
+        // 从文件中读取已经抽取的数据的最大id
+        char stremp[31];
+        File.FFGETS(stremp, 30);
+
+        imaxincvalue = atol(stremp);    // 将其转为整数赋值给 imaxincvalue
+
+        // 将这个最大的id吸入到日志文件中
+        logfile.Write("上次已经抽取数据的位置（%s=%ld）\n", starg.incfield, imaxincvalue);
     }
+    else        // 采用数据库方式存储id
+    {
+        // 从数据库表中加载自增字段的最大值
+        // create table T_MAXINCVALUE(pname varchar(50), maxincvalue numeric(15), primary key(pname));
+        sqlstatement stmt(&conn1);
 
-    // 从文件中读取已经抽取的数据的最大id
-    char stremp[31];
-    File.FFGETS(stremp, 30);
+        stmt.prepare("select maxincvalue form T_MAXINCVALUE where pname = :1");
 
-    imaxincvalue = atol(stremp);    // 将其转为整数赋值给 imaxincvalue
+        stmt.bindin(1, starg.pname, 50);
+        stmt.bindout(1, &imaxincvalue);
 
-    // 将这个最大的id吸入到日志文件中
-    logfile.Write("上次已经抽取数据的位置（%s=%ld）\n", starg.incfield, imaxincvalue);
+        // if(stmt.execute() != 0)
+        // {
+        //     logfile.Write("stmt.execute() faild\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
+        //     return false;
+        // }
+        stmt.execute();
+        stmt.next();
+    }
 
     return true;
 }
@@ -447,19 +495,53 @@ bool writeincfile()
     // 如果starg.incfield这个参数为空，表示不是增量抽取
     if(strlen(starg.incfield) == 0) return true;
 
-    CFile File;
-
-    if(File.Open(starg.incfilename, "w+") == false)
+    if(strlen(starg.connstr1) == 0)
     {
-        logfile.Write("File.Open(%s, \"w+\") failed\n", starg.incfilename);
-        return false;
+        CFile File;
+
+        if(File.Open(starg.incfilename, "w+") == false)
+        {
+            logfile.Write("File.Open(%s, \"w+\") failed\n", starg.incfilename);
+            return false;
+        }
+
+        // 把已抽取数据的最大id写入文件
+        File.Fprintf("%ld", imaxincvalue);
+
+        // 关闭文件
+        File.Close();
+    }
+    else
+    {
+        sqlstatement stmt(&conn1);
+
+        stmt.prepare("update T_MAXINCVALUE set maxincvalue=:1 where pname=:2");
+
+        if(stmt.m_cda.rc == 1146)
+        {
+            // 1146表示表不存在，不存在那就创建表
+            conn1.execute("create table T_MAXINCVALUE(pname varchar(50), maxincvalue numeric(15), primary key(pname))");
+            conn1.execute("insert into T_MAXINCVALUE values('%s',%ld)",starg.pname,imaxincvalue);
+            conn1.commit();
+            return true;
+        }
+
+        stmt.bindin(1, &imaxincvalue);
+        stmt.bindin(2, starg.pname, 50);
+
+        if(stmt.execute() != 0)
+        {
+            logfile.Write("stmt.execute() faild\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
+            return false;
+        }
+        if (stmt.m_cda.rpc==0)
+        {
+            conn1.execute("insert into T_MAXINCVALUE values('%s',%ld)",starg.pname,imaxincvalue);
+        }
+
+        conn1.commit();
     }
 
-    // 把已抽取数据的最大id写入文件
-    File.Fprintf("%ld", imaxincvalue);
-
-    // 关闭文件
-    File.Close();
     
     return true;
 }
