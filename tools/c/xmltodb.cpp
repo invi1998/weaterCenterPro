@@ -16,6 +16,22 @@ struct st_arg
   char pname[51];        // 本程序运行时的程序名。
 } starg;
 
+struct st_xmltotable
+{
+    char filename[101];         // xml文件的匹配规则，用逗号分割
+    char tname[31];             // 待入库的表名
+    int uptbz;                  // 更新标志，1-更新， 2-不更新
+    char execsql[301];          // 处理xml文件之前，执行的sql语句
+} stxmltotable;
+
+vector<struct st_xmltotable> vxmltotable;           // 数据入库的参数容器
+
+// 把数据入库的参数配置文件starg.inifilename加载到vxmltotable容器中
+bool loadxmltotable();
+
+// 从vxmltotable容器中查找xmlfilename的入库参数的函数，将查找结果存放在stxmltotable结构体中
+bool findxmltotable(char *xmlfilename);
+
 // 显示程序的帮助
 void _help(char *argv[]);
 
@@ -128,4 +144,84 @@ void EXIT(int sig)
     conn.disconnect();
 
     exit(0);
+}
+
+// 业务处理主函数
+bool _xmltodb()
+{
+    // 把数据入库的参数配置文件starg.inifilename加载到容器中
+
+    while (true)
+    {
+        // 打开starg.xmlpath目录
+
+        
+        // 遍历目录中的文件名
+        while(true)
+        {
+            // 读取目录，得到一个xml文件
+
+            // 处理xml文件
+            // 调用文件处理子函数
+
+            // 处理xml文件成功，写日志，备份文件
+
+            // 处理文件失败。分情况讨论
+        }
+
+        sleep(starg.timetvl);
+    }
+    
+
+    return true;
+}
+
+// 把数据入库的参数配置文件starg.inifilename加载到vxmltotable容器中
+bool loadxmltotable()
+{
+    // 清空容器
+    vxmltotable.clear();
+
+    CFile  File;
+
+    if(File.Open(starg.inifilename, "r") == false)
+    {
+        logfile.Write("File.Open(%s, \"r\") failed \n", starg.inifilename);
+        return false;
+    }
+
+    char strBuffer[501];
+    
+    while (true)
+    {
+        if(File.FFGETS(strBuffer, 500, "<endl/>") == false) break;
+
+        memset(&stxmltotable, 0, sizeof(struct st_xmltotable));
+
+        GetXMLBuffer(strBuffer, "filename", stxmltotable.filename, 100);    // xml文件的匹配规则，用逗号分割
+        GetXMLBuffer(strBuffer, "tname", stxmltotable.tname, 30);           // 待入库的表名
+        GetXMLBuffer(strBuffer, "uptbz", &stxmltotable.uptbz);              // 更新标志：1-更新，2-不更新
+        GetXMLBuffer(strBuffer, "execsql", stxmltotable.execsql, 300);      // 处理xml文件之前，执行的sql语句
+
+        vxmltotable.push_back(stxmltotable);
+    }
+
+    logfile.Write("loadxmltotable(%s) ok\n", starg.inifilename);
+
+    return true;
+}
+
+// 从vxmltotable容器中查找xmlfilename的入库参数的函数，将查找结果存放在stxmltotable结构体中
+bool findxmltotable(char *xmlfilename)
+{
+    for(auto iter = vxmltotable.begin(); iter != vxmltotable.end(); ++iter)
+    {
+        if(MatchStr(xmlfilename, (*iter).filename) == true)
+        {
+            memcpy(&stxmltotable, &(*iter), sizeof(struct st_xmltotable));
+            return true;
+        }
+    }
+
+    return false;
 }
