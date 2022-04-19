@@ -33,6 +33,9 @@ char strinsertsql[10241];       // 插入表的sql语句
 char strupdatesql[10241];       // 更新表的sql语句
 
 sqlstatement stmtins, stmtupt;      // 插入和更新两个sqlstatement对象
+
+int totalcount,inscount,uptcount;    // xml文件的总记录数、插入记录数和更新记录数。
+
 struct st_xmltotable
 {
     char filename[101];         // xml文件的匹配规则，用逗号分割
@@ -180,6 +183,7 @@ void EXIT(int sig)
 // 业务处理主函数
 bool _xmltodb()
 {
+
     // 把数据入库的参数配置文件starg.inifilename加载到容器中
 
     // 加载入库参数的计数器，初始化为50是为了在第一次进入循环的时候就加载参数
@@ -219,7 +223,7 @@ bool _xmltodb()
             // 处理xml文件成功，写日志，备份文件
             if(iret == 0)
             {
-                logfile.WriteEx("   ok\n");
+                logfile.WriteEx(" ok(%s,total=%d,insert=%d,update=%d).\n",stxmltotable.tname,totalcount,inscount,uptcount);
 
                 // 把xml文件移动到starg.xmlpathbak参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
                 if(xmltobakerr(Dir.m_FullFileName, starg.xmlpath, starg.xmlpathbak) == false) return false;
@@ -322,6 +326,7 @@ bool findxmltotable(char *xmlfilename)
 // xml文件入库主函数，返回值 0 - 成功，其他都是失败，失败的情况有很多
 int _xmltodb(char *fullfilename, char *filename)
 {
+    totalcount=inscount=uptcount=0;
     // 先从vxmltotable容器中查找filename的入库参数，存放在stxmltotable容器中
     if(findxmltotable(filename) == false) return 1;
 
@@ -372,6 +377,8 @@ int _xmltodb(char *fullfilename, char *filename)
         // 从xml文件中读取一行
         if(File.FFGETS(strbuffer, 10240, "<endl/>") == false) break;
 
+        totalcount++;
+
         // 解析xml，存放在已经绑定的输入变量strcolvalue中
         splitbuffer(strbuffer);
 
@@ -395,6 +402,10 @@ int _xmltodb(char *fullfilename, char *filename)
                         // 2013 - 查询过程中丢失了与mysql服务器的连接
                         if(stmtupt.m_cda.rc == 1053 || stmtupt.m_cda.rc == 2013) return 4;
                     }
+                    else
+                    {
+                        uptcount++;
+                    }
                 }
             }
             else
@@ -410,7 +421,7 @@ int _xmltodb(char *fullfilename, char *filename)
         }
         else
         {
-
+            inscount++;
         }
     }
 
