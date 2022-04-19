@@ -274,6 +274,26 @@ int _xmltodb(char *fullfilename, char *filename)
 
     // 处理文件之前，先查询mysql的数据字典，把表的字段信息拿出来（获取表全部的字段和主键信息）
 
+    CTABCOLS tabcols;
+
+    // 获取表全部的字段和主键信息，如果获取失败，应该是数据库连接已经失效
+    // 在本程序的运行过程中，如果数据库出现异常，一定会在这里被发现
+    if(tabcols.allcols(&conn, stxmltotable.tname) == false)
+    {
+        return 4;       // 数据库发生错误，放回4
+    }
+
+    if(tabcols.pkcols(&conn, stxmltotable.tname) == false)
+    {
+        return 4;       // 数据库发生错误，放回4
+    }
+
+    // 如果表 tabcols.m_allcount为0，表示表根本不存在，放回2
+    if(tabcols.m_allcount == 0)
+    {
+        return 2;       // 待入库表不存在
+    }
+
 
     // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
 
