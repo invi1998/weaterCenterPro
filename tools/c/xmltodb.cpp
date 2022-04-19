@@ -527,7 +527,7 @@ void preparesql()
         if(strcmp((*iter).colname, "upttime") == 0 || strcmp((*iter).colname, "keyid") == 0) continue;
 
         // 注意：strcolvalue数组的使用功能不是连续，是和tabcols.m_callcols的下标是一一对应的
-        stmtins.bindin(colseq, strcolvalue[indexValue - 1], (*iter).collen);
+        stmtins.bindin(colseq, strcolvalue[indexValue], (*iter).collen);
         colseq++;
     }
 
@@ -552,13 +552,12 @@ void preparesql()
         if((*iter).pkseq != 0) continue;
 
         // 注意：strcolvalue数组的使用功能不是连续，是和tabcols.m_callcols的下标是一一对应的
-        stmtupt.bindin(colseq, strcolvalue[indexValue - 1], (*iter).collen);
+        stmtupt.bindin(colseq, strcolvalue[indexValue], (*iter).collen);
         colseq++;
     }
 
     // 绑定where部分的输入参数
 
-    colseq = 1;     // set部分和where部分的序号
     indexValue = -1;
 
     // 绑定set部分的输入参数
@@ -570,7 +569,7 @@ void preparesql()
         if((*iter).pkseq == 0) continue;
 
         // 注意：strcolvalue数组的使用功能不是连续，是和tabcols.m_callcols的下标是一一对应的
-        stmtupt.bindin(colseq, strcolvalue[indexValue - 1], (*iter).collen);
+        stmtupt.bindin(colseq, strcolvalue[indexValue], (*iter).collen);
         colseq++;
     }
 
