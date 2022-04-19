@@ -2,6 +2,7 @@
 
 #include "_public.h"
 #include "_mysql.h"
+#include "_tools.h"
 
 struct st_arg
 {
@@ -211,7 +212,6 @@ bool _xmltodb()
         break;
         sleep(starg.timetvl);
     }
-    
 
     return true;
 }
@@ -271,6 +271,27 @@ int _xmltodb(char *fullfilename, char *filename)
 {
     // 先从vxmltotable容器中查找filename的入库参数，存放在stxmltotable容器中
     if(findxmltotable(filename) == false) return 1;
+
+    // 处理文件之前，先查询mysql的数据字典，把表的字段信息拿出来（获取表全部的字段和主键信息）
+
+
+    // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
+
+    // prepare插入和更新的sql语句，绑定输入变量
+
+    // 在处理xml文件之前，如果stxmltotable.execsql不为空，就执行它
+
+    // 打开xml文件
+
+    while (true)
+    {
+        // 从xml文件中读取一行
+
+        // 解析xml，存放在已经绑定的输入变量中
+
+        // 执行插入和更新的sql
+    }
+    
 
     return 0;
 }
