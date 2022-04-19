@@ -4,6 +4,11 @@
 #include "_mysql.h"
 #include "_tools.h"
 
+#define MAXCOLCOUNT 300             // 每个表字段的最大值
+#define MAXCOLLEN   100             // 表字段值的最大长度
+    
+char strcolvalue[MAXCOLCOUNT][MAXCOLLEN + 1];       // 存放xml每一行中解析出来的值
+
 struct st_arg
 {
   char connstr[101];     // 数据库的连接参数。
@@ -17,6 +22,17 @@ struct st_arg
   char pname[51];        // 本程序运行时的程序名。
 } starg;
 
+
+CLogFile logfile;
+
+connection conn;
+
+CTABCOLS tabcols;       // 数据字典类对象，获取表全部的字段和主键字段
+
+char strinsertsql[10241];       // 插入表的sql语句
+char strupdatesql[10241];       // 更新表的sql语句
+
+sqlstatement stmtins, stmtupt;      // 插入和更新两个sqlstatement对象
 struct st_xmltotable
 {
     char filename[101];         // xml文件的匹配规则，用逗号分割
@@ -39,15 +55,6 @@ void _help(char *argv[]);
 // 把xml解析到参数starg结构中
 bool _xmltoarg(char *strxmlbuffer);
 
-CLogFile logfile;
-
-connection conn;
-
-CTABCOLS tabcols;       // 数据字典类对象，获取表全部的字段和主键字段
-
-char strinsertsql[10241];       // 插入表的sql语句
-char strupdatesql[10241];       // 更新表的sql语句
-
 // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
 void crtsql();
  
@@ -61,6 +68,9 @@ int _xmltodb(char *fullfilename, char *filename);
 
 // 把xml文件（fullFileName）从srcpath移动到dstpath参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
 bool xmltobakerr(char* fullFileName, char *srcpath, char *dstpath);
+
+// prepare插入和更新的sql语句，绑定输入变量
+void preparesql();
 
 int main(int argc,char *argv[])
 {
@@ -320,6 +330,7 @@ int _xmltodb(char *fullfilename, char *filename)
     crtsql();
 
     // prepare插入和更新的sql语句，绑定输入变量
+    preparesql();
 
     // 在处理xml文件之前，如果stxmltotable.execsql不为空，就执行它
 
@@ -495,6 +506,72 @@ void crtsql()
         strcat(strupdatesql, strtemp);
         colseq++;
 
+    }
+
+}
+
+// prepare插入和更新的sql语句，绑定输入变量
+void preparesql()
+{
+    // 绑定插入sql语句的输入变量
+    stmtins.connect(&conn);
+    stmtins.prepare(strinsertsql);
+
+    int colseq = 1;     // values部分的序号
+    int indexValue = -1;
+
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        indexValue++;
+        // upttime和keyid这两个字段不需要处理
+        if(strcmp((*iter).colname, "upttime") == 0 || strcmp((*iter).colname, "keyid") == 0) continue;
+
+        // 注意：strcolvalue数组的使用功能不是连续，是和tabcols.m_callcols的下标是一一对应的
+        stmtins.bindin(colseq, strcolvalue[indexValue - 1], (*iter).collen);
+        colseq++;
+    }
+
+    // 绑定更新sql语句的输入变量
+    // 如果入库参数中的更新标志位不更新，就不必处理update语句，函数返回
+    if(stxmltotable.uptbz != 1) return;
+
+    stmtupt.connect(&conn);
+    stmtupt.prepare(strupdatesql);
+
+    colseq = 1;     // set部分和where部分的序号
+    indexValue = -1;
+
+    // 绑定set部分的输入参数
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        indexValue++;
+        // upttime和keyid这两个字段不需要处理
+        if(strcmp((*iter).colname, "upttime") == 0 || strcmp((*iter).colname, "keyid") == 0) continue;
+
+        // 如果是主键字段，就跳过它，不需要拼接在set后面
+        if((*iter).pkseq != 0) continue;
+
+        // 注意：strcolvalue数组的使用功能不是连续，是和tabcols.m_callcols的下标是一一对应的
+        stmtupt.bindin(colseq, strcolvalue[indexValue - 1], (*iter).collen);
+        colseq++;
+    }
+
+    // 绑定where部分的输入参数
+
+    colseq = 1;     // set部分和where部分的序号
+    indexValue = -1;
+
+    // 绑定set部分的输入参数
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        indexValue++;
+
+        // 如果是主键字段，就跳过它，不需要拼接在set后面,只有主键字段才拼接到where后面
+        if((*iter).pkseq == 0) continue;
+
+        // 注意：strcolvalue数组的使用功能不是连续，是和tabcols.m_callcols的下标是一一对应的
+        stmtupt.bindin(colseq, strcolvalue[indexValue - 1], (*iter).collen);
+        colseq++;
     }
 
 }
