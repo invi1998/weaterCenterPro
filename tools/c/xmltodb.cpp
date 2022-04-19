@@ -42,6 +42,14 @@ bool _xmltoarg(char *strxmlbuffer);
 CLogFile logfile;
 
 connection conn;
+
+CTABCOLS tabcols;       // 数据字典类对象，获取表全部的字段和主键字段
+
+char strinsertsql[10241];       // 插入表的sql语句
+char strupdatesql[10241];       // 更新表的sql语句
+
+// 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
+void crtsql();
  
 void EXIT(int sig);
 
@@ -208,6 +216,21 @@ bool _xmltodb()
                 // 把xml文件移动到starg.xmlpatherr参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
                 if(xmltobakerr(Dir.m_FullFileName, starg.xmlpath, starg.xmlpatherr) == false) return false;
             }
+
+            // 数据库错误，函数返回，程序将退出
+            if(iret == 4)
+            {
+                logfile.WriteEx("   failed. 数据库错误\n");
+                return false;
+            }
+
+            // 如果是表不存在
+            if(iret == 2)
+            {
+                logfile.WriteEx("failed. [待入库的表%s不存在]\n", stxmltotable.tname);
+                // 把xml文件移动到starg.xmlpatherr参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
+                if(xmltobakerr(Dir.m_FullFileName, starg.xmlpath, starg.xmlpatherr) == false) return false;
+            }
         }
         break;
         sleep(starg.timetvl);
@@ -274,8 +297,6 @@ int _xmltodb(char *fullfilename, char *filename)
 
     // 处理文件之前，先查询mysql的数据字典，把表的字段信息拿出来（获取表全部的字段和主键信息）
 
-    CTABCOLS tabcols;
-
     // 获取表全部的字段和主键信息，如果获取失败，应该是数据库连接已经失效
     // 在本程序的运行过程中，如果数据库出现异常，一定会在这里被发现
     if(tabcols.allcols(&conn, stxmltotable.tname) == false)
@@ -296,6 +317,7 @@ int _xmltodb(char *fullfilename, char *filename)
 
 
     // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
+    crtsql();
 
     // prepare插入和更新的sql语句，绑定输入变量
 
@@ -339,4 +361,57 @@ bool xmltobakerr(char* fullFileName, char *srcpath, char *dstpath)
     }
 
     return true;
+}
+
+// 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
+void crtsql()
+{
+    memset(strinsertsql, 0, sizeof(strinsertsql));
+    memset(strupdatesql, 0, sizeof(strupdatesql));
+
+    // 生成插入表的sql语句 insert into 表名（%s） values(%s)
+    char strinsertp1[3001];     // insert语句的字段列表
+    char strinsertp2[3001];     // insert语句的values后面的内容
+
+    memset(strinsertp1, 0, sizeof(strinsertp1));
+    memset(strinsertp2, 0, sizeof(strinsertp2));
+
+    int colseq = 1;         // values部分字段的序号
+
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        // upttime和keyid这两个字段不需要处理
+        if(strcmp((*iter).colname, "upttime") == 0 || strcmp((*iter).colname, "keyid") == 0) continue;
+
+        // 拼接 strinsertp1
+        strcat(strinsertp1, (*iter).colname);
+        strcat(strinsertp1, ",");
+
+        // 拼接strinserttp2，需要区分date字段和非date字段
+        char strtemp[51];
+        if(strcmp((*iter).datatype, "date") != 0)
+        {
+            SNPRINTF(strtemp, 50, sizeof(strtemp), ":%d", colseq);
+        }
+        else
+        {
+            SNPRINTF(strtemp, 50, sizeof(strtemp), "str_to_date(:%d, '%%%%Y%%%%m%%%%d%%%%H%%%%i%%%%s')", colseq);
+        }
+
+        strcat(strinsertp2, strtemp);
+
+        strcat(strinsertp2, ",");
+        
+        colseq++;
+    }
+
+    // 删除拼接过程中多余的逗号
+    strinsertp1[strlen(strinsertp1) - 1] = 0;
+    strinsertp2[strlen(strinsertp2) - 1] = 0;
+
+    SNPRINTF(strinsertp1, 10340, sizeof(strinsertp1), "insert into %s(%s) values(%s)", stxmltotable.tname, strinsertp1, strinsertp2);
+
+    // 生成修改表的sql语句
+
+
 }
