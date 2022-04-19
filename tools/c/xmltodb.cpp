@@ -413,6 +413,8 @@ int _xmltodb(char *fullfilename, char *filename)
 
         }
     }
+
+    conn.commit();
     
 
     return 0;
