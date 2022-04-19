@@ -4,10 +4,9 @@
 #include "_mysql.h"
 #include "_tools.h"
 
-#define MAXCOLCOUNT 300             // 每个表字段的最大值
-#define MAXCOLLEN   100             // 表字段值的最大长度
+#define MAXCOLCOUNT 500             // 每个表字段的最大值
     
-char strcolvalue[MAXCOLCOUNT][MAXCOLLEN + 1];       // 存放xml每一行中解析出来的值
+char *strcolvalue[MAXCOLCOUNT];       // 存放xml每一行中解析出来的值
 
 struct st_arg
 {
@@ -22,6 +21,7 @@ struct st_arg
   char pname[51];        // 本程序运行时的程序名。
 } starg;
 
+CPActive PActive;
 
 CLogFile logfile;
 
@@ -88,7 +88,7 @@ int main(int argc,char *argv[])
     // 关闭全部的信号和输入输出。
     // 设置信号,在shell状态下可用 "kill + 进程号" 正常终止些进程。
     // 但请不要用 "kill -9 +进程号" 强行终止。
-    // CloseIOAndSignal();
+    CloseIOAndSignal();
     signal(SIGINT,EXIT); signal(SIGTERM,EXIT);
 
     if (logfile.Open(argv[1],"a+")==false)
@@ -99,12 +99,7 @@ int main(int argc,char *argv[])
     // 把xml解析到参数starg结构中
     if (_xmltoarg(argv[2])==false) return -1;
 
-    if (conn.connecttodb(starg.connstr,starg.charset) != 0)
-    {
-        printf("connect database(%s) failed.\n%s\n",starg.connstr,conn.m_cda.message); EXIT(-1);
-    }
-
-    logfile.Write("connect database(%s) ok.\n",starg.connstr);
+    PActive.AddPInfo(starg.timeout, starg.pname);
 
     // 业务处理主函数
     _xmltodb();
@@ -214,11 +209,23 @@ bool _xmltodb()
             // 读取目录，得到一个xml文件
             if(Dir.ReadDir() == false) break;
 
+            if(conn.m_state == 0)
+            {
+                if (conn.connecttodb(starg.connstr,starg.charset) != 0)
+                {
+                    printf("connect database(%s) failed.\n%s\n",starg.connstr,conn.m_cda.message); return false;
+                }
+
+                logfile.Write("connect database(%s) ok.\n",starg.connstr);
+            }
+
             logfile.Write("处理文件%s...", Dir.m_FullFileName);
 
             // 处理xml文件
             // 调用文件处理子函数
             int iret = _xmltodb(Dir.m_FullFileName, Dir.m_FileName);
+
+            PActive.UptATime();
 
             // 处理xml文件成功，写日志，备份文件
             if(iret == 0)
@@ -265,9 +272,18 @@ bool _xmltodb()
                 logfile.WriteEx("failed. [打开xml文件失败]\n");
                 return false;
             }
+
+            // 数据表字段大于程序承载的最大字段数
+            if(iret == 5)
+            {
+                return false;
+            }
         }
-        break;
-        sleep(starg.timetvl);
+
+        // 如果刚才这次扫描有文件，表示不空闲，可能不断的有文件生成，就不sleep了
+        if(Dir.m_vFileName.size() == 0) sleep(starg.timetvl);
+
+        PActive.UptATime();
     }
 
     return true;
@@ -330,6 +346,16 @@ int _xmltodb(char *fullfilename, char *filename)
     // 先从vxmltotable容器中查找filename的入库参数，存放在stxmltotable容器中
     if(findxmltotable(filename) == false) return 1;
 
+    // 释放上次处理xml文件时，为字段分配的内存
+    for(int i = 0; i < tabcols.m_allcount; i++)
+    {
+        if(strcolvalue[i] != 0)
+        {
+            delete strcolvalue[i];
+            strcolvalue[i] = 0;
+        }
+    }
+
     // 处理文件之前，先查询mysql的数据字典，把表的字段信息拿出来（获取表全部的字段和主键信息）
 
     // 获取表全部的字段和主键信息，如果获取失败，应该是数据库连接已经失效
@@ -350,6 +376,19 @@ int _xmltodb(char *fullfilename, char *filename)
         return 2;       // 待入库表不存在
     }
 
+    if(tabcols.m_allcount > MAXCOLCOUNT)
+    {
+        logfile.Write("数据表字段（%d）大于程序承载的最大字段数（%d）\n", tabcols.m_allcount, MAXCOLCOUNT);
+        return 5;
+    }
+
+    // 为每个字段分配内存
+    int index = 0;
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        strcolvalue[index] = new char[(*iter).collen + 1];
+        index++;
+    }
 
     // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
     crtsql();
@@ -681,7 +720,11 @@ bool execsqlpre()
 // 解析xml，存放在已经绑定的输入变量strcolvalue中
 void splitbuffer(char *strbuffer)
 {
-    memset(strcolvalue, 0, sizeof(strcolvalue));
+    // 初始化strcolvalue数组
+    for(int i = 0; i < tabcols.m_allcount; i++)
+    {
+        memset(strcolvalue[i], 0, tabcols.m_vallcols[i].collen + 1);
+    }
         
     char strtemp[31];
     int index = -1;
