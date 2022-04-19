@@ -3,10 +3,10 @@
 ####################################################################
 
 killall -9 procctl
-killall gzipfiles crtsurfdata deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver obtcodetodb\
-        execsql dminingmysql
+killall gzipfiles crtsurfdata deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver obtcodetodb
+killall execsql dminingmysql xmltodb
 
 sleep 3
 
 killall -9 gzipfiles crtsurfdata deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver obtcodetodbobtcodetodb\
-        execsql dminingmysql
+killall execsql dminingmysql xmltodb

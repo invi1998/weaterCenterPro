@@ -55,3 +55,13 @@
 
 # 清理/idcdata/dmindata目录中文件，防止把空间撑满。
 /project/tools/bin/procctl 300 /project/tools/bin/deletefiles /idcdata/dmindata "*" 0.02
+
+# 把/idcdata/dmindata目录中的xml发送到/idcdata/xmltodb/vip1，交由xmltodb程序去入库。
+/project/tools/bin/procctl 20 /project/tools/bin/tcpputfiles /log/idc/tcpputfiles_dmindata.log "<ip>127.0.0.1</ip><port>5005</port><ptype>1</ptype><clientpath>/idcdata/dmindata</clientpath><andchild>false</andchild><matchname>*.XML</matchname><srvpath>/idcdata/xmltodb/vip1</srvpath><timetvl>10</timetvl><timeout>50</timeout><pname>tcpputfiles_dmindata</pname>"
+
+# 把/idcdata/xmltodb/vip1目录中的xml文件入库
+/project/tools/bin/procctl 10 /project/tools/bin/xmltodb /log/idc/xmltodb_vip1.log "<connstr>127.0.0.1,root,sh269jgl105,mysql,3306</connstr><charset>utf8</charset><inifilename>/project/idc/ini/xmltodb.xml</inifilename><xmlpath>/idcdata/xmltodb/vip1</xmlpath><xmlpathbak>/idcdata/xmltodb/vip1bak</xmlpathbak><xmlpatherr>/idcdata/xmltodb/vip1err</xmlpatherr><timetvl>5</timetvl><timeout>50</timeout><pname>xmltodb_vip1</pname>"
+
+# 清理/idcdata/xmltodb/vip1bak和/idcdata/xmltodb/vip1err目录中文件，防止把空间撑满。
+/project/tools/bin/procctl 300 /project/tools/bin/deletefiles /idcdata/xmltodb/vip1bak "*" 0.02
+/project/tools/bin/procctl 300 /project/tools/bin/deletefiles /idcdata/xmltodb/vip1err "*" 0.02
