@@ -116,5 +116,38 @@ bool CTABCOLS::allcols(connection *conn, char *tablename)
 // 获取指定表的主键字段信息
 bool CTABCOLS::pkcols(connection *conn, char *tablename)
 {
+    m_pkcount = 0;
+    memset(m_pkcols, 0, sizeof(m_pkcols));
+    m_vpkcols.clear();
+
+    struct st_columns stcolumns;
+
+    sqlstatement stmt;
+    stmt.connect(conn);
+    stmt.prepare("select lower(column_name),seq_in_index from information_schema.STATISTICS where table_name=:1 and index_name='primary' order by seq_in_index");
+
+    stmt.bindin(1, tablename, 30);
+    stmt.bindout(1, stcolumns.colname, 30);
+    stmt.bindout(2, &stcolumns.pkseq);
+
+    if(stmt.execute() != 0) return false;
+    
+    while (true)
+    {
+        memset(&stcolumns, 0, sizeof(struct st_columns));
+
+        if(stmt.next() != 0) break;
+
+        strcat(m_pkcols, stcolumns.colname);
+        strcat(m_pkcols, ",");
+
+        m_vpkcols.push_back(stcolumns);
+
+        m_pkcount++;
+    }
+
+    // 删除m_pkcols最后一个多余的逗号
+    if(m_pkcount > 0) m_pkcols[strlen(m_pkcols) - 1] = 0;
+    
     return true;
 }
