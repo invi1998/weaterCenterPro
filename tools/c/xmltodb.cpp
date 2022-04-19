@@ -67,7 +67,7 @@ void EXIT(int sig);
 bool _xmltodb();
 
 // xml文件入库主函数，返回值 0 - 成功，其他都是失败，失败的情况有很多
-int _xmltodb(char *fullfilename, char *filename);
+int _xmltodbFile(char *fullfilename, char *filename);
 
 // 把xml文件（fullFileName）从srcpath移动到dstpath参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
 bool xmltobakerr(char* fullFileName, char *srcpath, char *dstpath);
@@ -103,8 +103,6 @@ int main(int argc,char *argv[])
 
     // 业务处理主函数
     _xmltodb();
-
-    return 0;
 
 }
 
@@ -196,9 +194,9 @@ bool _xmltodb()
         }
 
         // 打开starg.xmlpath目录(不打开子目录，需要排序，最多一次打开10000个文件)
-        if(Dir.OpenDir(starg.xmlpath, "*.xml", 10000, false, true) == false)
+        if(Dir.OpenDir(starg.xmlpath, "*.XML", 10000, false, true) == false)
         {
-            logfile.Write("Dir.OpenDir(%s, \"*.xml\", 10000, false, true) failed\n", starg.xmlpath);
+            logfile.Write("Dir.OpenDir(%s, \"*.XML\", 10000, false, true) failed\n", starg.xmlpath);
             return false;
         }
 
@@ -223,7 +221,7 @@ bool _xmltodb()
 
             // 处理xml文件
             // 调用文件处理子函数
-            int iret = _xmltodb(Dir.m_FullFileName, Dir.m_FileName);
+            int iret = _xmltodbFile(Dir.m_FullFileName, Dir.m_FileName);
 
             PActive.UptATime();
 
@@ -327,11 +325,11 @@ bool loadxmltotable()
 // 从vxmltotable容器中查找xmlfilename的入库参数的函数，将查找结果存放在stxmltotable结构体中
 bool findxmltotable(char *xmlfilename)
 {
-    for(auto iter = vxmltotable.begin(); iter != vxmltotable.end(); ++iter)
+    for (int ii=0;ii<vxmltotable.size();ii++)
     {
-        if(MatchStr(xmlfilename, (*iter).filename) == true)
+        if (MatchStr(xmlfilename,vxmltotable[ii].filename)==true)
         {
-            memcpy(&stxmltotable, &(*iter), sizeof(struct st_xmltotable));
+            memcpy(&stxmltotable, &vxmltotable[ii], sizeof(struct st_xmltotable));
             return true;
         }
     }
@@ -340,7 +338,7 @@ bool findxmltotable(char *xmlfilename)
 }
 
 // xml文件入库主函数，返回值 0 - 成功，其他都是失败，失败的情况有很多
-int _xmltodb(char *fullfilename, char *filename)
+int _xmltodbFile(char *fullfilename, char *filename)
 {
     totalcount=inscount=uptcount=0;
     // 先从vxmltotable容器中查找filename的入库参数，存放在stxmltotable容器中
@@ -355,6 +353,8 @@ int _xmltodb(char *fullfilename, char *filename)
             strcolvalue[i] = 0;
         }
     }
+
+    logfile.Write("test--1\n");
 
     // 处理文件之前，先查询mysql的数据字典，把表的字段信息拿出来（获取表全部的字段和主键信息）
 
@@ -383,12 +383,9 @@ int _xmltodb(char *fullfilename, char *filename)
     }
 
     // 为每个字段分配内存
-    int index = 0;
-    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
-    {
-        strcolvalue[index] = new char[(*iter).collen + 1];
-        index++;
-    }
+    for (int ii=0;ii<tabcols.m_allcount;ii++) strcolvalue[ii]=new char[tabcols.m_vallcols[ii].collen+1];
+
+    logfile.Write("\ntest--2\n");
 
     // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
     crtsql();
@@ -533,6 +530,8 @@ void crtsql()
         strcat(strinsertp2, strtemp);
 
         strcat(strinsertp2, ",");
+
+        logfile.Write("\ntest--3\n");
         
         colseq++;
     }
@@ -541,7 +540,7 @@ void crtsql()
     strinsertp1[strlen(strinsertp1) - 1] = 0;
     strinsertp2[strlen(strinsertp2) - 1] = 0;
 
-    SNPRINTF(strinsertp1, 10340, sizeof(strinsertp1), "insert into %s(%s) values(%s)", stxmltotable.tname, strinsertp1, strinsertp2);
+    SNPRINTF(strinsertp1, 10240, sizeof(strinsertp1), "insert into %s(%s) values(%s)", stxmltotable.tname, strinsertp1, strinsertp2);
 
 
     if(stxmltotable.uptbz != 1) return;     // 如果更新标志不是 1（更新），就返回，不用生成修改表的sql语句了
