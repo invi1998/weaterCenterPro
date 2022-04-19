@@ -388,14 +388,14 @@ void crtsql()
         strcat(strinsertp1, ",");
 
         // 拼接strinserttp2，需要区分date字段和非date字段
-        char strtemp[51];
+        char strtemp[101];
         if(strcmp((*iter).datatype, "date") != 0)
         {
-            SNPRINTF(strtemp, 50, sizeof(strtemp), ":%d", colseq);
+            SNPRINTF(strtemp, 100, sizeof(strtemp), ":%d", colseq);
         }
         else
         {
-            SNPRINTF(strtemp, 50, sizeof(strtemp), "str_to_date(:%d, '%%%%Y%%%%m%%%%d%%%%H%%%%i%%%%s')", colseq);
+            SNPRINTF(strtemp, 100, sizeof(strtemp), "str_to_date(:%d, '%%%%Y%%%%m%%%%d%%%%H%%%%i%%%%s')", colseq);
         }
 
         strcat(strinsertp2, strtemp);
@@ -411,7 +411,90 @@ void crtsql()
 
     SNPRINTF(strinsertp1, 10340, sizeof(strinsertp1), "insert into %s(%s) values(%s)", stxmltotable.tname, strinsertp1, strinsertp2);
 
-    // 生成修改表的sql语句
 
+    if(stxmltotable.uptbz != 1) return;     // 如果更新标志不是 1（更新），就返回，不用生成修改表的sql语句了
+
+    // 生成修改表的sql语句
+    // update T_ZHOBTMIND1 set t=:1,p=:2,u=:3,wd=:4,wf=:5,r=:6,vis=:7,upttime=now(),mint=:8,minttime=str_to_date(:9, '%Y%m%d%H%i%s') where obtid=:10 and ddatetime=str_to_date(:11, '%Y%m%d%H%i%s')
+
+    // 更新tabcols.m_vallcols中的pkseq字段，在拼接update语句的时候会用到它
+    for(auto iter = tabcols.m_vpkcols.begin(); iter != tabcols.m_vpkcols.end(); ++iter)
+    {
+        for(auto ite = tabcols.m_vallcols.begin(); ite != tabcols.m_vallcols.end(); ++ite)
+        {
+            if(strcmp((*iter).colname, (*ite).colname) == 0)
+            {
+                // 更新m_vallcols容器中的pkseq
+                (*ite).pkseq = (*iter).pkseq;
+                break;
+            }
+        }
+    }
+
+    // 先拼接sql语句开始的部分
+    sprintf(strupdatesql, "update %s set", stxmltotable.tname);
+
+    colseq = 1;
+
+    // 拼接sql语句的set部分
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        // keyid字段不需要处理
+        if(strcmp((*iter).colname, "keyid") == 0) continue;
+
+        // 如果是主键字段，也不需要拼接在set后面
+        if((*iter).pkseq != 0) continue;
+
+        // 如果是更新时间字段，upttime字段直接等于now()，这么做是为了数据库的兼容性考虑
+        if(strcmp((*iter).colname, "upttime") == 0)
+        {
+            strcat(strupdatesql, "upttime=now(),");
+        }
+
+        // 其他字段要区分date字段和非date字段
+        char strtemp[101];
+
+        if(strcmp((*iter).datatype, "date") != 0)
+        {
+            SNPRINTF(strtemp, 100, sizeof(strtemp), "%s=:%d", (*iter).colname, colseq);
+        }
+        else
+        {
+            SNPRINTF(strtemp, 100, sizeof(strtemp), "%s=str_to_date(:%d, '%%%%Y%%%%m%%%%d%%%%H%%%%i%%%%s')", (*iter).colname, colseq);
+        }
+
+        strcat(strupdatesql, strtemp);
+        strcat(strupdatesql, ",");
+        colseq++;
+    }
+
+    strupdatesql[strlen(strupdatesql) - 1] = 0;
+
+    // 然后拼接update语句where后面的部分
+    strcat(strupdatesql, " where 1=1 ");        // 用 1=1 是为了后面的拼接方便，这是常用的处理方法
+
+    colseq = 1;
+
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        // keyid字段不需要处理
+        if(strcmp((*iter).colname, "keyid") == 0) continue;
+
+        // 把主键字段拼接到update语句中。注意需要区分date和非date字段
+        char strtemp[101];
+
+        if(strcmp((*iter).datatype, "date") != 0)
+        {
+            SNPRINTF(strtemp, 100, sizeof(strtemp), " and %s=:%d", (*iter).colname, colseq);
+        }
+        else
+        {
+            SNPRINTF(strtemp, 100, sizeof(strtemp), " and %s=str_to_date(:%d, '%%%%Y%%%%m%%%%d%%%%H%%%%i%%%%s')", (*iter).colname, colseq);
+        }
+
+        strcat(strupdatesql, strtemp);
+        colseq++;
+
+    }
 
 }
