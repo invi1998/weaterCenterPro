@@ -72,6 +72,12 @@ bool xmltobakerr(char* fullFileName, char *srcpath, char *dstpath);
 // prepare插入和更新的sql语句，绑定输入变量
 void preparesql();
 
+// 在处理xml文件之前，如果stxmltotable.execsql不为空，就执行它
+bool execsqlpre();
+
+// 解析xml，存放在已经绑定的输入变量strcolvalue中
+void splitbuffer(char *strbuffer);
+
 int main(int argc,char *argv[])
 {
     if (argc!=3) { _help(argv); return -1; }
@@ -241,6 +247,20 @@ bool _xmltodb()
                 // 把xml文件移动到starg.xmlpatherr参数指定的目录中(一般文件移动不会出现问题，如果出现了问题，那么大多都是权限或者磁盘空间满了)
                 if(xmltobakerr(Dir.m_FullFileName, starg.xmlpath, starg.xmlpatherr) == false) return false;
             }
+
+            // 在处理xml文件之前，如果执行stxmltotable.execsql失败，函数返回6，那么程序将退出
+            if(iret == 6)
+            {
+                logfile.WriteEx("failed. [执行execsql失败]\n");
+                return false;
+            }
+
+            // 打开xml文件失败
+            if(iret == 3)
+            {
+                logfile.WriteEx("failed. [打开xml文件失败]\n");
+                return false;
+            }
         }
         break;
         sleep(starg.timetvl);
@@ -333,16 +353,65 @@ int _xmltodb(char *fullfilename, char *filename)
     preparesql();
 
     // 在处理xml文件之前，如果stxmltotable.execsql不为空，就执行它
+    if(execsqlpre() == false) return 6;        // sql执行失败，返回6
 
     // 打开xml文件
+    CFile File;
+
+    if(File.Open(fullfilename, "r") == false)
+    {
+        // 如果打开文件失败，那么这里需要回滚事务，然后返回错误代码3
+        conn.rollback();
+        return 3;
+    }
+
+    char strbuffer[10241];
 
     while (true)
     {
         // 从xml文件中读取一行
+        if(File.FFGETS(strbuffer, 10240, "<endl/>") == false) break;
 
-        // 解析xml，存放在已经绑定的输入变量中
+        // 解析xml，存放在已经绑定的输入变量strcolvalue中
+        splitbuffer(strbuffer);
 
         // 执行插入和更新的sql
+        if(stmtins.execute() != 0)
+        {
+            // 执行失败，如果返回的错误码是 1062 ，表示违反了唯一性约束，表示记录已经存在，那么就执行更新的sql语句
+            if(stmtins.m_cda.rc == 1062)
+            {
+                // 是否执行更新的sql，还需要判断入库员参数的更新标志
+                if(stxmltotable.uptbz == 1)
+                {
+                    if(stmtupt.execute() != 0)
+                    {
+                        // 如果更新失败，记录日志，把出错的行和错误内容记录下来，然后函数不返回，继续处理数据，也就是说，不理这行
+                        logfile.Write("%s   ", strbuffer);
+                        logfile.WriteEx("stmtupt.execute() failed\n%s\n%s\n", stmtupt.m_sql, stmtupt.m_cda.message);
+
+                        // 判断错误代码，如果是数据库连接已经失效，无法继续，只能返回
+                        // 1053 - 在操作过程中，服务器关闭
+                        // 2013 - 查询过程中丢失了与mysql服务器的连接
+                        if(stmtupt.m_cda.rc == 1053 || stmtupt.m_cda.rc == 2013) return 4;
+                    }
+                }
+            }
+            else
+            {
+                // 如果插入失败，记录日志，把出错的行和错误内容记录下来，然后函数不返回，继续处理数据，也就是说，不理这行
+                logfile.Write("%s   ", strbuffer);
+                logfile.WriteEx("stmtins.execute() failed\n%s\n%s\n", stmtins.m_sql, stmtins.m_cda.message);
+                // 判断错误代码，如果是数据库连接已经失效，无法继续，只能返回
+                // 1053 - 在操作过程中，服务器关闭
+                // 2013 - 查询过程中丢失了与mysql服务器的连接
+                if(stmtins.m_cda.rc == 1053 || stmtins.m_cda.rc == 2013) return 4;
+            }
+        }
+        else
+        {
+
+        }
     }
     
 
@@ -573,4 +642,71 @@ void preparesql()
         colseq++;
     }
 
+}
+
+// 在处理xml文件之前，如果stxmltotable.execsql不为空，就执行它
+bool execsqlpre()
+{
+    if(strlen(stxmltotable.execsql) == 0) return true;
+
+    sqlstatement stmt;
+    stmt.connect(&conn);
+    stmt.prepare(stxmltotable.execsql);
+
+    if(stmt.execute() != 0)
+    {
+        logfile.Write("stmt.execute() failed\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
+        return false;
+    }
+
+    // 注意，这里不需要提交事务，执行这个sql语句 和 处理xml文件需要放在同一个事务中。
+    // 如果这里提交了事务，假设处理xml文件失败，那么就可能会导致原来的表数据丢失
+
+    return true;
+}
+
+// 解析xml，存放在已经绑定的输入变量strcolvalue中
+void splitbuffer(char *strbuffer)
+{
+    memset(strcolvalue, 0, sizeof(strcolvalue));
+        
+    char strtemp[31];
+    int index = -1;
+    for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
+    {
+        index++;
+        // 如果是日期时间字段，提取数值就可以了
+        // 也就是说xml文件中的日期时间只要包含了yyyymmddhh24miss就行，可以是任意分隔符
+        if(strcmp((*iter).datatype, "date") == 0)
+        {
+            GetXMLBuffer(strbuffer, (*iter).colname, strtemp, (*iter).collen);
+
+            // 从一个字符串中提取出数字、符号和小数点，存放到另一个字符串中。
+            // src：原字符串。
+            // dest：目标字符串。
+            // bsigned：是否包括符号（+和-），true-包括；false-不包括。
+            // bdot：是否包括小数点的圆点符号，true-包括；false-不包括。
+            PickNumber(strtemp, strcolvalue[index], false, false);
+            continue;
+        }
+
+        // 如果是数值字段，只提取数字，+ - 和圆点
+        if(strcmp((*iter).datatype, "number") == 0)
+        {
+            GetXMLBuffer(strbuffer, (*iter).colname, strtemp, (*iter).collen);
+
+            // 如果是字符字段，直接提取
+            // 从一个字符串中提取出数字、符号和小数点，存放到另一个字符串中。
+            // src：原字符串。
+            // dest：目标字符串。
+            // bsigned：是否包括符号（+和-），true-包括；false-不包括。
+            // bdot：是否包括小数点的圆点符号，true-包括；false-不包括。
+            PickNumber(strtemp, strcolvalue[index], true, true);
+            continue;
+        }
+
+        // 如果是数值字段，只提取数字，+ - 和圆点
+        GetXMLBuffer(strbuffer, (*iter).colname, strcolvalue[index], (*iter).collen);
+
+    }
 }
