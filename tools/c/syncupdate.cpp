@@ -63,6 +63,28 @@ int main(int argc,char *argv[])
 
     // logfile.Write("connect database(%s) ok.\n",starg.localconnstr);
 
+    // 如果starg.remotecols或者starg.localcols为空。就用starg.localtname表的全部列来填充
+    if(strlen(starg.remotecols) == 0 || strlen(starg.localcols) == 0)
+    {
+        CTABCOLS tablecols;
+
+        if(tablecols.allcols(&connloc, starg.localtname) == false)
+        {
+            logfile.Write("表%s不存在\n", starg.localtname);
+            EXIT(-1);
+        }
+
+        if(strlen(starg.remotecols) == 0)
+        {
+            strcpy(starg.remotecols, tablecols.m_allcols);
+        }
+
+        if(strlen(starg.localcols) == 0)
+        {
+            strcpy(starg.localcols, tablecols.m_allcols);
+        }
+    }
+
     // 业务处理主函数。
     _syncupdate();
 
@@ -71,15 +93,15 @@ int main(int argc,char *argv[])
 // 显示程序的帮助
 void _help(char *argv[])
 {
-    printf("Using:/project/tools1/bin/syncupdate logfilename xmlbuffer\n\n");
+    printf("Using:/project/tools/bin/syncupdate logfilename xmlbuffer\n\n");
 
-    printf("Sample:/project/tools1/bin/procctl 10 /project/tools1/bin/syncupdate /log/idc/syncupdate_ZHOBTCODE2.log \"<localconnstr>192.168.174.129,root,mysqlpwd,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTCODE1</fedtname><localtname>T_ZHOBTCODE2</localtname><remotecols>obtid,cityname,provname,lat,lon,height/10,upttime,keyid</remotecols><localcols>stid,cityname,provname,lat,lon,altitude,upttime,keyid</localcols><synctype>1</synctype><timeout>50</timeout><pname>syncupdate_ZHOBTCODE2</pname>\"\n\n");
+    printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTCODE2.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTCODE1</fedtname><localtname>T_ZHOBTCODE2</localtname><remotecols>obtid,cityname,provname,lat,lon,height/10,upttime,keyid</remotecols><localcols>stid,cityname,provname,lat,lon,altitude,upttime,keyid</localcols><synctype>1</synctype><timeout>50</timeout><pname>syncupdate_ZHOBTCODE2</pname>\"\n\n");
 
     // 因为测试的需要，xmltodb程序每次会删除LK_ZHOBTCODE1中的数据，全部的记录重新入库，keyid会变。
     // 所以以下脚本不能用keyid，要用obtid，用keyid会出问题，可以试试。
-    printf("       /project/tools1/bin/procctl 10 /project/tools1/bin/syncupdate /log/idc/syncupdate_ZHOBTCODE3.log \"<localconnstr>192.168.174.129,root,mysqlpwd,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTCODE1</fedtname><localtname>T_ZHOBTCODE3</localtname><remotecols>obtid,cityname,provname,lat,lon,height/10,upttime,keyid</remotecols><localcols>stid,cityname,provname,lat,lon,altitude,upttime,keyid</localcols><where>where obtid like '54%%%%'</where><synctype>2</synctype><remoteconnstr>192.168.174.132,root,mysqlpwd,mysql,3306</remoteconnstr><remotetname>T_ZHOBTCODE1</remotetname><remotekeycol>obtid</remotekeycol><localkeycol>stid</localkeycol><maxcount>10</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTCODE3</pname>\"\n\n");
+    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTCODE3.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTCODE1</fedtname><localtname>T_ZHOBTCODE3</localtname><remotecols>obtid,cityname,provname,lat,lon,height/10,upttime,keyid</remotecols><localcols>stid,cityname,provname,lat,lon,altitude,upttime,keyid</localcols><where>where obtid like '54%%%%'</where><synctype>2</synctype><remoteconnstr>192.168.174.132,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTCODE1</remotetname><remotekeycol>obtid</remotekeycol><localkeycol>stid</localkeycol><maxcount>10</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTCODE3</pname>\"\n\n");
 
-    printf("       /project/tools1/bin/procctl 10 /project/tools1/bin/syncupdate /log/idc/syncupdate_ZHOBTMIND2.log \"<localconnstr>192.168.174.129,root,mysqlpwd,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>where ddatetime>timestampadd(minute,-120,now())</where><synctype>2</synctype><synctype>2</synctype><remoteconnstr>192.168.174.132,root,mysqlpwd,mysql,3306</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTMIND2</pname>\"\n\n");
+    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTMIND2.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>where ddatetime>timestampadd(minute,-120,now())</where><synctype>2</synctype><synctype>2</synctype><remoteconnstr>192.168.174.132,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTMIND2</pname>\"\n\n");
 
     printf("本程序是数据中心的公共功能模块，采用刷新的方法同步MySQL数据库之间的表。\n");
 
@@ -195,6 +217,40 @@ void EXIT(int sig)
 // 业务处理主函数。
 bool _syncupdate()
 {
+    CTimer Timer;
+
+    sqlstatement stmtdel(&connloc);     // 执行删除本地表中记录的sql语句
+    sqlstatement stmtins(&connloc);     // 执行向本地表中插入数据的sql语句
+
+    // 如果是不分批同步，表示需要同步的数据量较少，执行一次sql语句就可以搞定（全表刷新）
+    if(starg.synctype == 1)
+    {
+        logfile.Write("sync %s to %s ....", starg.fedtname, starg.localtname);
+
+        // 先删除starg.localtname表中满足where条件的记录
+        stmtdel.prepare("delete from %s %s", starg.localtname, starg.where);
+        if(stmtdel.execute() != 0)
+        {
+            logfile.Write("stmtdel.execute() failed\n%s\n%s\n", stmtdel.m_sql, stmtdel.m_cda.message);
+            return false;
+        }
+        // 再把starg.fedtname表中满足where条件的记录插入到starg.localname表中
+        stmtins.prepare("insert into %s(%s) select %s from %s %s", starg.localtname, starg.localcols, starg.remotecols, starg.fedtname, starg.where);
+        if(stmtins.execute() != 0)
+        {
+            // 如果执行插入sql失败，那么应该回滚事务
+            connloc.rollback();
+
+            logfile.Write("stmtins.execute() failed\n%s\n%s\n", stmtins.m_sql, stmtins.m_cda.message);
+
+            return false;
+        }
+        
+        logfile.WriteEx("   %d rows in %.2f sec\n", stmtins.m_cda.rpc, Timer.Elapsed());
+
+        connloc.commit();   // 提交事务
+        return true;
+    }
 
     return true;
 }
@@ -213,7 +269,7 @@ create table LK_ZHOBTCODE1
    keyid                int not null auto_increment comment '记录编号，自动增长列。',
    primary key (obtid),
    unique key ZHOBTCODE1_KEYID (keyid)
-)ENGINE=FEDERATED CONNECTION='mysql://root:mysqlpwd@192.168.174.132:3306/mysql/T_ZHOBTCODE1';
+)ENGINE=FEDERATED CONNECTION='mysql://root:sh269jgl105@192.168.174.132:3306/mysql/T_ZHOBTCODE1';
 
 create table LK_ZHOBTMIND1
 (
@@ -230,5 +286,5 @@ create table LK_ZHOBTMIND1
    keyid                bigint not null auto_increment comment '记录编号，自动增长列。',
    primary key (obtid, ddatetime),
    unique key ZHOBTMIND1_KEYID (keyid)
-)ENGINE=FEDERATED CONNECTION='mysql://root:mysqlpwd@192.168.174.132:3306/mysql/T_ZHOBTMIND1';
+)ENGINE=FEDERATED CONNECTION='mysql://root:sh269jgl105@192.168.174.132:3306/mysql/T_ZHOBTMIND1';
 */
