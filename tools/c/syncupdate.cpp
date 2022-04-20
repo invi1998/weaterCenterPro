@@ -268,7 +268,7 @@ bool _syncupdate()
     // 从远程表查找需要同步的记录的key字段的值
     char remkeyvalue[51];
     sqlstatement stmtsel(&connrem);
-    stmtdel.prepare("select %s from %s %s", starg.remotekeycol, starg.remotetname, starg.where);
+    stmtsel.prepare("select %s from %s %s", starg.remotekeycol, starg.remotetname, starg.where);
     stmtsel.bindout(1, remkeyvalue, 50);
 
     // 拼接绑定同步sql语句参数的字符串 (:1, :2, :3...:starg.maxcount)
@@ -300,10 +300,10 @@ bool _syncupdate()
     // insert into T_ZHOBTCODE3(stid, cityname, provname,lat,lon,altitude,upttime,keyid)
     //                  select obtid,cityname,provname,lat,lon,height/10,keyid from LK_ZHOBTCODE1
     //                      where obtid in (:1,:2,:3);
-    stmtins.prepare("insert into %s(%s) select %s from %s where %s in (%s)", starg.localtname, starg.localcols, starg.remotecols, starg.fedtname, starg.remotekeycol, bindstr);
-    for(int i = 0; i < starg.maxcount; i++)
+    stmtins.prepare("insert into %s(%s) select %s from %s where %s in (%s)",starg.localtname,starg.localcols,starg.remotecols,starg.fedtname,starg.remotekeycol,bindstr);
+    for (int ii=0;ii<starg.maxcount;ii++)
     {
-        stmtins.bindin(i+1, keyvalues[i], 50);
+        stmtins.bindin(ii+1,keyvalues[ii],50);
     }
 
     memset(keyvalues, 0, sizeof(keyvalues));
