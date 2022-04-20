@@ -18,6 +18,7 @@ class CTABCOLS
 public:
     int m_allcount;             // 全部的字段个数
     int m_pkcount;              // 主键字段的个数
+    int m_maxcollen;            // 全部列中最大的长度
 
     vector<struct st_columns> m_vallcols;       // 存放全部的字段信息的容器
     vector<struct st_columns> m_vpkcols;        // 存放主键字段信息的容器

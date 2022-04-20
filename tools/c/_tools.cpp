@@ -15,6 +15,7 @@ void CTABCOLS::inidata()
     m_allcount=m_pkcount=0;
     m_vallcols.clear();
     m_vpkcols.clear();
+    m_maxcollen = 0;
     memset(m_allcols, 0, sizeof(m_allcols));
     memset(m_pkcols, 0, sizeof(m_pkcols));
 }
@@ -23,6 +24,7 @@ void CTABCOLS::inidata()
 bool CTABCOLS::allcols(connection *conn, char *tablename)
 {
     m_allcount = 0;
+    m_maxcollen = 0;
     m_vallcols.clear();
     memset(m_allcols, 0, sizeof(m_allcols));
 
@@ -101,6 +103,8 @@ bool CTABCOLS::allcols(connection *conn, char *tablename)
 
         // 然后把结构体放入容器中
         m_vallcols.push_back(stcolumns);
+
+        if (m_maxcollen<stcolumns.collen) m_maxcollen=stcolumns.collen;
 
         m_allcount++;
     }
