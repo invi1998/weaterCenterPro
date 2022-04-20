@@ -99,9 +99,9 @@ void _help(char *argv[])
 
     // 因为测试的需要，xmltodb程序每次会删除LK_ZHOBTCODE1中的数据，全部的记录重新入库，keyid会变。
     // 所以以下脚本不能用keyid，要用obtid，用keyid会出问题，可以试试。
-    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTCODE3.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTCODE1</fedtname><localtname>T_ZHOBTCODE3</localtname><remotecols>obtid,cityname,provname,lat,lon,height/10,upttime,keyid</remotecols><localcols>stid,cityname,provname,lat,lon,altitude,upttime,keyid</localcols><where>where obtid like '54%%%%'</where><synctype>2</synctype><remoteconnstr>192.168.174.132,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTCODE1</remotetname><remotekeycol>obtid</remotekeycol><localkeycol>stid</localkeycol><maxcount>10</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTCODE3</pname>\"\n\n");
+    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTCODE3.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTCODE1</fedtname><localtname>T_ZHOBTCODE3</localtname><remotecols>obtid,cityname,provname,lat,lon,height/10,upttime,keyid</remotecols><localcols>stid,cityname,provname,lat,lon,altitude,upttime,keyid</localcols><where>where obtid like '54%%%%'</where><synctype>2</synctype><remoteconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTCODE1</remotetname><remotekeycol>obtid</remotekeycol><localkeycol>stid</localkeycol><maxcount>10</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTCODE3</pname>\"\n\n");
 
-    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTMIND2.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>where ddatetime>timestampadd(minute,-120,now())</where><synctype>2</synctype><synctype>2</synctype><remoteconnstr>192.168.174.132,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTMIND2</pname>\"\n\n");
+    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTMIND2.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>where ddatetime>timestampadd(minute,-120,now())</where><synctype>2</synctype><synctype>2</synctype><remoteconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTMIND2</pname>\"\n\n");
 
     printf("本程序是数据中心的公共功能模块，采用刷新的方法同步MySQL数据库之间的表。\n\n");
 
@@ -256,6 +256,134 @@ bool _syncupdate()
         return true;
     }
 
+    // 分批刷新，适用于数据量较大的表
+    
+    // 连接远程数据库
+    if(connrem.connecttodb(starg.remoteconnstr, starg.charset) != 0)
+    {
+        logfile.Write("connrem.connecttodb(%s, %s) failed\n%s\n", starg.remoteconnstr, starg.charset, connrem.m_cda.message);
+        return false;
+    }
+
+    // 从远程表查找需要同步的记录的key字段的值
+    char remkeyvalue[51];
+    sqlstatement stmtsel(&connrem);
+    stmtdel.prepare("select %s from %s %s", starg.remotekeycol, starg.remotetname, starg.where);
+    stmtsel.bindout(1, remkeyvalue, 50);
+
+    // 拼接绑定同步sql语句参数的字符串 (:1, :2, :3...:starg.maxcount)
+    char bindstr[2001];
+    char strtemp[11];
+
+    memset(bindstr, 0, sizeof(bindstr));
+
+    for(int i = 0; i < starg.maxcount; i++)
+    {
+        memset(strtemp, 0, sizeof(strtemp));
+
+        sprintf(strtemp, ":%lu,", i+1);
+        strcat(bindstr, strtemp);
+    }
+    bindstr[strlen(bindstr) - 1] = 0;       // 删除拼接结束后的最后一个逗号
+
+    char keyvalues[starg.maxcount][51];         // 存放starg.maxcount条记录
+
+    // 准备删除本地表数据的sql语句，一次删除starg.maxcount条记录
+    // delete from T_ZHOBTCODE3 where stid in(:1, :2, :3,...:starg.maxcount)
+    stmtdel.prepare("delete from %s where %s in (%s)", starg.localtname, starg.localkeycol, bindstr);
+    for(int i = 0; i < starg.maxcount; i++)
+    {
+        stmtdel.bindin(i+1, keyvalues[i], 50);
+    }
+
+    // 准备插入本地表数据的sql语句，一次插入starg.maxcount条记录
+    // insert into T_ZHOBTCODE3(stid, cityname, provname,lat,lon,altitude,upttime,keyid)
+    //                  select obtid,cityname,provname,lat,lon,height/10,keyid from LK_ZHOBTCODE1
+    //                      where obtid in (:1,:2,:3);
+    stmtins.prepare("insert into %s(%s) select %s from %s where %s in (%s)", starg.localtname, starg.localcols, starg.remotecols, starg.fedtname, starg.remotekeycol, bindstr);
+    for(int i = 0; i < starg.maxcount; i++)
+    {
+        stmtins.bindin(i+1, keyvalues[i], 50);
+    }
+
+    memset(keyvalues, 0, sizeof(keyvalues));
+
+    int ccount = 0;     // 记录从结果集中已经获取到的记录数
+
+    if(stmtsel.execute() != 0)
+    {
+        logfile.Write("stmtsel.execute() failed\n%s\n%s\n", stmtsel.m_sql, stmtsel.m_cda.message);
+        return false;
+    }
+
+    while (true)
+    {
+        // 获取需要同步的数据的结果集
+        if(stmtsel.next() != 0) break;
+
+        strcpy(keyvalues[ccount], remkeyvalue);
+
+        ccount++;
+
+        // 没starg.maxcount条记录执行一次同步
+        if(ccount == starg.maxcount)
+        {
+            // 从本地表中删除记录
+            if(stmtdel.execute() != 0)
+            {
+                // 执行从本地表中删除记录的操作一般不会出错
+                // 如果报错，就肯定是数据库的问题或者同步参数配置不正确，流程不必继续走下去
+                logfile.Write("stmtdel.execute() failed\n%s\n%s\n", stmtdel.m_sql, stmtdel.m_cda.message);
+                return false;
+            }
+
+            // 向本地表中插入记录
+            if(stmtins.execute() != 0)
+            {
+                // 执行从本地表中插入记录的操作一般不会出错
+                // 如果报错，就肯定是数据库的问题或者同步参数配置不正确，流程不必继续走下去
+                logfile.Write("stmtins.execute() failed\n%s\n%s\n", stmtins.m_sql, stmtins.m_cda.message);
+                return false;
+            }
+
+            logfile.Write("sync %s to %s (%d rows) in %.2f sec\n", starg.fedtname, starg.localtname, ccount, Timer.Elapsed());
+
+            connloc.commit();
+
+            memset(keyvalues, 0, sizeof(keyvalues));
+
+            ccount = 0;     // 记录从结果集中已经获取到的记录数
+        }
+    }
+
+    // 如果ccout大于0，表示还有没同步的记录，并且这些记录不够一批，那么就再执行一次同步
+    if(ccount > 0)
+    {
+        // 从本地表中删除记录
+        if(stmtdel.execute() != 0)
+        {
+            // 执行从本地表中删除记录的操作一般不会出错
+            // 如果报错，就肯定是数据库的问题或者同步参数配置不正确，流程不必继续走下去
+            logfile.Write("stmtdel.execute() failed\n%s\n%s\n", stmtdel.m_sql, stmtdel.m_cda.message);
+            return false;
+        }
+
+        // 向本地表中插入记录
+        if(stmtins.execute() != 0)
+        {
+            // 执行从本地表中插入记录的操作一般不会出错
+            // 如果报错，就肯定是数据库的问题或者同步参数配置不正确，流程不必继续走下去
+            logfile.Write("stmtins.execute() failed\n%s\n%s\n", stmtins.m_sql, stmtins.m_cda.message);
+            return false;
+        }
+
+        logfile.Write("sync %s to %s (%d rows) in %.2f sec\n", starg.fedtname, starg.localtname, ccount, Timer.Elapsed());
+
+        connloc.commit();
+
+    }
+    
+
     return true;
 }
 
@@ -273,7 +401,7 @@ create table LK_ZHOBTCODE1
    keyid                int not null auto_increment comment '记录编号，自动增长列。',
    primary key (obtid),
    unique key ZHOBTCODE1_KEYID (keyid)
-)ENGINE=FEDERATED CONNECTION='mysql://root:sh269jgl105@192.168.174.132:3306/mysql/T_ZHOBTCODE1';
+)ENGINE=FEDERATED CONNECTION='mysql://root:sh269jgl105@192.168.31.133:3306/mysql/T_ZHOBTCODE1';
 
 create table LK_ZHOBTMIND1
 (
@@ -290,5 +418,5 @@ create table LK_ZHOBTMIND1
    keyid                bigint not null auto_increment comment '记录编号，自动增长列。',
    primary key (obtid, ddatetime),
    unique key ZHOBTMIND1_KEYID (keyid)
-)ENGINE=FEDERATED CONNECTION='mysql://root:sh269jgl105@192.168.174.132:3306/mysql/T_ZHOBTMIND1';
+)ENGINE=FEDERATED CONNECTION='mysql://root:sh269jgl105@192.168.31.133:3306/mysql/T_ZHOBTMIND1';
 */
