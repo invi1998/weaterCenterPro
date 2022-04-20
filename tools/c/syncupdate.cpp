@@ -24,6 +24,7 @@ struct st_arg
 CLogFile logfile;
 connection connloc;   // 本地数据库连接。
 connection connrem;   // 远程数据库连接。
+CPActive PActive;
 
 // 业务处理主函数。
 bool _syncupdate();
@@ -41,7 +42,7 @@ int main(int argc,char *argv[])
     if (argc!=3) { _help(argv); return -1; }
 
     // 关闭全部的信号和输入输出，处理程序退出的信号。
-    //CloseIOAndSignal();
+    CloseIOAndSignal();
     signal(SIGINT,EXIT); signal(SIGTERM,EXIT);
 
     if (logfile.Open(argv[1],"a+")==false)
@@ -52,7 +53,7 @@ int main(int argc,char *argv[])
     // 把xml解析到参数starg结构中
     if (_xmltoarg(argv[2])==false) return -1;
 
-    // PActive.AddPInfo(starg.timeout,starg.pname);
+    PActive.AddPInfo(starg.timeout,starg.pname);
     // 注意，在调试程序的时候，可以启用类似以下的代码，防止超时。
     // PActive.AddPInfo(starg.timeout*100,starg.pname);
 
@@ -353,6 +354,8 @@ bool _syncupdate()
             memset(keyvalues, 0, sizeof(keyvalues));
 
             ccount = 0;     // 记录从结果集中已经获取到的记录数
+
+            PActive.UptATime();
         }
     }
 
