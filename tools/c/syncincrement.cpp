@@ -84,7 +84,7 @@ int main(int argc,char *argv[])
         // 获取starg.localtname表的全部列。
         if (TABCOLS.allcols(&connloc,starg.localtname)==false)
         {
-        logfile.Write("表%s不存在。\n",starg.localtname); EXIT(-1); 
+            logfile.Write("表%s不存在。\n",starg.localtname); EXIT(-1); 
         }
 
         if (strlen(starg.remotecols)==0)  strcpy(starg.remotecols,TABCOLS.m_allcols);
