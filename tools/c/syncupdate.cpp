@@ -198,3 +198,37 @@ bool _syncupdate()
 
     return true;
 }
+
+// 创建federated表的脚本
+/*
+create table LK_ZHOBTCODE1
+(
+   obtid                varchar(10) not null comment '站点代码',
+   cityname             varchar(30) not null comment '城市名称',
+   provname             varchar(30) not null comment '省名称',
+   lat                  int not null comment '纬度，单位：0.01度。',
+   lon                  int not null comment '经度，单位：0.01度。',
+   height               int not null comment '海拔高度，单位：0.1米。',
+   upttime              timestamp not null comment '更新时间。',
+   keyid                int not null auto_increment comment '记录编号，自动增长列。',
+   primary key (obtid),
+   unique key ZHOBTCODE1_KEYID (keyid)
+)ENGINE=FEDERATED CONNECTION='mysql://root:mysqlpwd@192.168.174.132:3306/mysql/T_ZHOBTCODE1';
+
+create table LK_ZHOBTMIND1
+(
+   obtid                varchar(10) not null comment '站点代码。',
+   ddatetime            datetime not null comment '数据时间，精确到分钟。',
+   t                    int comment '湿度，单位：0.1摄氏度。',
+   p                    int comment '气压，单位：0.1百帕。',
+   u                    int comment '相对湿度，0-100之间的值。',
+   wd                   int comment '风向，0-360之间的值。',
+   wf                   int comment '风速：单位0.1m/s。',
+   r                    int comment '降雨量：0.1mm。',
+   vis                  int comment '能见度：0.1米。',
+   upttime              timestamp not null comment '更新时间。',
+   keyid                bigint not null auto_increment comment '记录编号，自动增长列。',
+   primary key (obtid, ddatetime),
+   unique key ZHOBTMIND1_KEYID (keyid)
+)ENGINE=FEDERATED CONNECTION='mysql://root:mysqlpwd@192.168.174.132:3306/mysql/T_ZHOBTMIND1';
+*/
