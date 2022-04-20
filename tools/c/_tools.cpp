@@ -72,17 +72,16 @@ bool CTABCOLS::allcols(connection *conn, char *tablename)
         }
 
         // 然后是数值类型(不管是什么数值类型，都设置为number类型)
-        if(strcmp(stcolumns.datatype, "TINYINT") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "SMALLINT") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "MEDIUMINT") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "INT") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "INTEGER") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "BIGINT") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "FLOAT") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "DOUBLE") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "DECIMAL") == 0) strcpy(stcolumns.datatype, "number");
-        if(strcmp(stcolumns.datatype, "numeric") == 0) strcpy(stcolumns.datatype, "number");
-
+        if (strcmp(stcolumns.datatype,"tinyint")==0)   strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"smallint")==0)  strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"mediumint")==0) strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"int")==0)       strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"integer")==0)   strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"bigint")==0)    strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"numeric")==0)   strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"decimal")==0)   strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"float")==0)     strcpy(stcolumns.datatype,"number");
+        if (strcmp(stcolumns.datatype,"double")==0)    strcpy(stcolumns.datatype,"number");
         // 如果业务有需要，可以修改上面的代码，增加对更多数据类型的支持
 
         // 如果字段的数据类型不在上面列出来的里面，就忽略它

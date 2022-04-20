@@ -354,8 +354,6 @@ int _xmltodbFile(char *fullfilename, char *filename)
         }
     }
 
-    logfile.Write("test--1\n");
-
     // 处理文件之前，先查询mysql的数据字典，把表的字段信息拿出来（获取表全部的字段和主键信息）
 
     // 获取表全部的字段和主键信息，如果获取失败，应该是数据库连接已经失效
@@ -384,8 +382,6 @@ int _xmltodbFile(char *fullfilename, char *filename)
 
     // 为每个字段分配内存
     for (int ii=0;ii<tabcols.m_allcount;ii++) strcolvalue[ii]=new char[tabcols.m_vallcols[ii].collen+1];
-
-    logfile.Write("\ntest--2\n");
 
     // 有了表的字段和主键信息，就可以拼接生成插入和更新表数据的sql
     crtsql();
@@ -463,7 +459,6 @@ int _xmltodbFile(char *fullfilename, char *filename)
 
     conn.commit();
     
-
     return 0;
 }
 
@@ -530,8 +525,6 @@ void crtsql()
         strcat(strinsertp2, strtemp);
 
         strcat(strinsertp2, ",");
-
-        logfile.Write("\ntest--3\n");
         
         colseq++;
     }
@@ -540,8 +533,7 @@ void crtsql()
     strinsertp1[strlen(strinsertp1) - 1] = 0;
     strinsertp2[strlen(strinsertp2) - 1] = 0;
 
-    SNPRINTF(strinsertp1, 10240, sizeof(strinsertp1), "insert into %s(%s) values(%s)", stxmltotable.tname, strinsertp1, strinsertp2);
-
+    SNPRINTF(strinsertsql, 10240, sizeof(strinsertsql), "insert into %s(%s) values(%s)", stxmltotable.tname, strinsertp1, strinsertp2);
 
     if(stxmltotable.uptbz != 1) return;     // 如果更新标志不是 1（更新），就返回，不用生成修改表的sql语句了
 
@@ -563,7 +555,7 @@ void crtsql()
     }
 
     // 先拼接sql语句开始的部分
-    sprintf(strupdatesql, "update %s set", stxmltotable.tname);
+    sprintf(strupdatesql, "update %s set ", stxmltotable.tname);
 
     colseq = 1;
 
@@ -580,6 +572,7 @@ void crtsql()
         if(strcmp((*iter).colname, "upttime") == 0)
         {
             strcat(strupdatesql, "upttime=now(),");
+            continue;
         }
 
         // 其他字段要区分date字段和非date字段
@@ -604,12 +597,9 @@ void crtsql()
     // 然后拼接update语句where后面的部分
     strcat(strupdatesql, " where 1=1 ");        // 用 1=1 是为了后面的拼接方便，这是常用的处理方法
 
-    colseq = 1;
-
     for(auto iter = tabcols.m_vallcols.begin(); iter != tabcols.m_vallcols.end(); ++iter)
     {
-        // keyid字段不需要处理
-        if(strcmp((*iter).colname, "keyid") == 0) continue;
+        if((*iter).pkseq == 0) continue;        // 如果不是主键字段，跳过
 
         // 把主键字段拼接到update语句中。注意需要区分date和非date字段
         char strtemp[101];
