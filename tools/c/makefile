@@ -20,7 +20,7 @@ MYSQLCPP = /project/public/db/mysql/_mysql.cpp
 CFLAGS = -g
 
 all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver execsql\
-	dminingmysql xmltodb syncupdate
+	dminingmysql xmltodb syncupdate syncincrement
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp
@@ -76,6 +76,10 @@ syncupdate:syncupdate.cpp _tools.h _tools.cpp
 	g++ $(CFLAGS) -o syncupdate syncupdate.cpp _tools.cpp $(PUBINCL) $(PUBcpp) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
 	cp syncupdate ../bin/.
 
+syncincrement:syncincrement.cpp _tools.h _tools.cpp
+	g++ $(CFLAGS) -o syncincrement syncincrement.cpp _tools.cpp $(PUBINCL) $(PUBcpp) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
+	cp syncincrement ../bin/.
+
 clean:
 	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver tcpgetfiles execsql dminingmysql\
-			xmltodb syncupdate
+			xmltodb syncupdate syncincrement
