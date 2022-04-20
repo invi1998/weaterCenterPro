@@ -103,7 +103,7 @@ void _help(char *argv[])
 
     printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate /log/idc/syncupdate_ZHOBTMIND2.log \"<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><charset>utf8</charset><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>where ddatetime>timestampadd(minute,-120,now())</where><synctype>2</synctype><synctype>2</synctype><remoteconnstr>192.168.174.132,root,sh269jgl105,mysql,3306</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_ZHOBTMIND2</pname>\"\n\n");
 
-    printf("本程序是数据中心的公共功能模块，采用刷新的方法同步MySQL数据库之间的表。\n");
+    printf("本程序是数据中心的公共功能模块，采用刷新的方法同步MySQL数据库之间的表。\n\n");
 
     printf("logfilename   本程序运行的日志文件。\n");
     printf("xmlbuffer     本程序运行的参数，用xml表示，具体如下：\n\n");
@@ -114,10 +114,14 @@ void _help(char *argv[])
     printf("fedtname      Federated表名。\n");
     printf("localtname    本地表名。\n");
 
-    printf("remotecols    远程表的字段列表，用于填充在select和from之间，所以，remotecols可以是真实的字段，也可以是函数的返回值或者运算结果。如果本参数为空，就用localtname表的字段列表填充。\n");
-    printf("localcols     本地表的字段列表，与remotecols不同，它必须是真实存在的字段。如果本参数为空，就用localtname表的字段列表填充。\n");
+    printf("remotecols    远程表的字段列表，用于填充在select和from之间，所以，remotecols可以是真实的字段，\n"\
+            "              也可以是函数的返回值或者运算结果。如果本参数为空，就用localtname表的字段列表填充。\n");
+    printf("localcols     本地表的字段列表，与remotecols不同，它必须是真实存在的字段。如果本参数为空，\n"\
+            "              就用localtname表的字段列表填充。\n");
 
-    printf("where         同步数据的条件，即select语句的where部分，本参数可以为空，表示同步全部的记录。\n");
+    printf("where         同步数据的条件，为空则表示同步全部的记录，填充在delete本地表和select Federated表\n"\
+            "              之后，注意：1）where中的字段必须同时在本地表和Federated表中；2）不要用系统时间作\n"\
+            "              为条件。\n");
 
     printf("synctype      同步方式：1-不分批同步；2-分批同步。\n");
     printf("remoteconnstr 远程数据库的连接参数，格式与localconnstr相同，当synctype==2时有效。\n");
@@ -129,7 +133,7 @@ void _help(char *argv[])
 
     printf("timeout       本程序的超时时间，单位：秒，视数据量的大小而定，建议设置30以上。\n");
     printf("pname         本程序运行时的进程名，尽可能采用易懂的、与其它进程不同的名称，方便故障排查。\n\n");
-    printf("注意：1）remotekeycol和localkeycol字段的选取很重要，如果用了MySQL的自增字段，那么在远程表中数据生成后自增字段的值不可改变，否则同步会失败；2）当远程表中存在delete操作时，无法分批同步，因为远程表的记录被delete后就找不到了，无法从本地表中执行delete操作。\n\n\n");
+    printf("注意：\n1）remotekeycol和localkeycol字段的选取很重要，如果用了MySQL的自增字段，那么在远程表中数据生成后自增字段的值不可改变，否则同步会失败；\n2）当远程表中存在delete操作时，无法分批同步，因为远程表的记录被delete后就找不到了，无法从本地表中执行delete操作。\n\n\n");
 
 }
 
