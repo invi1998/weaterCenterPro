@@ -45,7 +45,7 @@
 /project/tools/bin/procctl 10 /project/idc/bin/obtmindtodb /idcdata/surfdata "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/obtmindtodb.log
 
 # 清理T_ZHOBTMIND?表中120分之前的数据，防止磁盘空间被撑满。
-/project/tools/bin/procctl 120 /project/tools/bin/execsql /project/idc/sql/cleardata.sql "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/execsql.log
+# /project/tools/bin/procctl 120 /project/tools/bin/execsql /project/idc/sql/cleardata.sql "192.168.31.133,root,sh269jgl105,mysql,3306" utf8 /log/idc/execsql.log
 
 # 每隔1小时把T_ZHOBTCODE表中全部的数据抽取出来
 /project/tools/bin/procctl 3600 /project/tools/bin/dminingmysql /log/idc/dminingmysql_ZHOBTCODE.log "<connstr>127.0.0.1,root,sh269jgl105,mysql,3306</connstr><charset>utf8</charset><selectsql>select obtid,cityname,provname,lat,lon,height from T_ZHOBTCODE</selectsql><fieldstr>obtid,cityname,provname,lat,lon,height</fieldstr><fieldlen>10,30,30,10,10,10</fieldlen><bfilename>ZHOBTCODE</bfilename><efilename>HYCZ</efilename><outpath>/idcdata/dmindata</outpath><timeout>30</timeout><pname>dminingmysql_ZHOBTCODE</pname>"
@@ -78,3 +78,18 @@
 
 # 采用增量同步的方法，把表T_ZHOBTMIND1中obtid like '54%'的记录同步到表T_ZHOBTMIND3
 /project/tools/bin/procctl 10 /project/tools/bin/syncincrement /log/idc/syncincrement_ZHOBTMIND3.log "<localconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</localconnstr><remoteconnstr>192.168.31.133,root,sh269jgl105,mysql,3306</remoteconnstr><charset>utf8</charset><remotetname>T_ZHOBTMIND1</remotetname><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND3</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>and obtid like '54%%'</where><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement1_ZHOBTMIND3</pname>"
+
+# 把T_ZHOBTMIND表中120分钟之前的数据迁移到T_ZHOBTMIND_HIS表。
+/project/tools/bin/procctl 3600 /project/tools/bin/migratetable /log/idc/migratetable_ZHOBTMIND.log "<connstr>192.168.31.133,root,sh269jgl105,mysql,3306</connstr><srctname>T_ZHOBTMIND</srctname><dsttname>T_ZHOBTMIND_HIS</dsttname><keycol>keyid</keycol><where>where ddatetime<timestampadd(minute,-65,now())</where><maxcount>300</maxcount><timeout>120</timeout><pname>migratetable_ZHOBTMIND</pname>"
+
+# 清理T_ZHOBTMIND1表中120分钟之前的数据。
+/project/tools/bin/procctl 3600 /project/tools/bin/deletetable /log/idc/deletetable_ZHOBTMIND1.log "<connstr>192.168.31.133,root,sh269jgl105,mysql,3306</connstr><tname>T_ZHOBTMIND1</tname><keycol>keyid</keycol><where>where ddatetime<timestampadd(minute,-65,now())</where><timeout>120</timeout><pname>deletetable_ZHOBTMIND1</pname>"
+
+# 清理T_ZHOBTMIND2表中120分钟之前的数据。
+/project/tools/bin/procctl 3600 /project/tools/bin/deletetable /log/idc/deletetable_ZHOBTMIND2.log "<connstr>192.168.31.133,root,sh269jgl105,mysql,3306</connstr><tname>T_ZHOBTMIND2</tname><keycol>recid</keycol><where>where ddatetime<timestampadd(minute,-65,now())</where><timeout>120</timeout><pname>deletetable_ZHOBTMIND2</pname>"
+
+# 清理T_ZHOBTMIND3表中120分钟之前的数据。
+/project/tools/bin/procctl 3600 /project/tools/bin/deletetable /log/idc/deletetable_ZHOBTMIND3.log "<connstr>192.168.31.133,root,sh269jgl105,mysql,3306</connstr><tname>T_ZHOBTMIND3</tname><keycol>recid</keycol><where>where ddatetime<timestampadd(minute,-65,now())</where><timeout>120</timeout><pname>deletetable_ZHOBTMIND3</pname>"
+
+# 清理T_ZHOBTMIND_HIS表中240分钟之前的数据。
+/project/tools/bin/procctl 3600 /project/tools/bin/deletetable /log/idc/deletetable_ZHOBTMIND_HIS.log "<connstr>192.168.31.133,root,sh269jgl105,mysql,3306</connstr><tname>T_ZHOBTMIND_HIS</tname><keycol>keyid</keycol><where>where ddatetime<timestampadd(minute,-240,now())</where><timeout>120</timeout><pname>deletetable_ZHOBTMIND_HIS</pname>"
