@@ -5,15 +5,15 @@
 
 struct st_arg
 {
-  char connstr[101];     // 数据库的连接参数。
-  char charset[51];      // 数据库的字符集。
-  char inifilename[301]; // 数据入库的参数配置文件。
-  char xmlpath[301];     // 待入库xml文件存放的目录。
-  char xmlpathbak[301];  // xml文件入库后的备份目录。
-  char xmlpatherr[301];  // 入库失败的xml文件存放的目录。
-  int  timetvl;          // 本程序运行的时间间隔，本程序常驻内存。
-  int  timeout;          // 本程序运行时的超时时间。
-  char pname[51];        // 本程序运行时的程序名。
+    char connstr[101];     // 数据库的连接参数。
+    char charset[51];      // 数据库的字符集。
+    char inifilename[301]; // 数据入库的参数配置文件。
+    char xmlpath[301];     // 待入库xml文件存放的目录。
+    char xmlpathbak[301];  // xml文件入库后的备份目录。
+    char xmlpatherr[301];  // 入库失败的xml文件存放的目录。
+    int  timetvl;          // 本程序运行的时间间隔，本程序常驻内存。
+    int  timeout;          // 本程序运行时的超时时间。
+    char pname[51];        // 本程序运行时的程序名。
 } starg;
 
 // 显示程序的帮助
@@ -437,16 +437,20 @@ void crtsql()
         // keyid字段需要特殊处理。
         if (strcmp(TABCOLS.m_vallcols[ii].colname,"keyid")==0)
         {
-        SNPRINTF(strtemp,100,sizeof(strtemp),"SEQ_%s.nextval",stxmltotable.tname+2);
+            SNPRINTF(strtemp,100,sizeof(strtemp),"SEQ_%s.nextval",stxmltotable.tname+2);
         }
         else
         {
-        if (strcmp(TABCOLS.m_vallcols[ii].datatype,"date")!=0)
-            SNPRINTF(strtemp,100,sizeof(strtemp),":%d",colseq);
-        else
-            SNPRINTF(strtemp,100,sizeof(strtemp),"to_date(:%d,'yyyymmddhh24miss')",colseq);
+            if (strcmp(TABCOLS.m_vallcols[ii].datatype,"date")!=0)
+            {
+                SNPRINTF(strtemp,100,sizeof(strtemp),":%d",colseq);
+            }
+            else
+            {
+                SNPRINTF(strtemp,100,sizeof(strtemp),"to_date(:%d,'yyyymmddhh24miss')",colseq);
+            }
 
-        colseq++;
+            colseq++;
         }
 
         strcat(strinsertp2,strtemp);  strcat(strinsertp2,",");
@@ -491,7 +495,7 @@ void crtsql()
         // upttime字段直接等于sysdate，这么做是为了考虑数据库的兼容性。
         if (strcmp(TABCOLS.m_vallcols[ii].colname,"upttime")==0)
         {
-        strcat(strupdatesql,"upttime=sysdate,"); continue;
+            strcat(strupdatesql,"upttime=sysdate,"); continue;
         }
 
         // 其它字段需要区分date字段和非date字段。
