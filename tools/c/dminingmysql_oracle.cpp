@@ -1,7 +1,9 @@
-// 程序名：dminingmysql.cpp，本程序是数据中心的公共功能模块，用于从MySQL数据库源表抽取数据，生成xml文件。
+// 程序名：dminingmysql_oracle.cpp，本程序是数据中心的公共功能模块，用于从MySQL数据库源表抽取数据，生成xml文件。
 
 #include "_public.h"
-#include "_mysql.h"
+#include "_ooci.h"
+
+#define MAXPARAMS   256     // 结果集字段的最大数
 
 int imaxfieldlen = -1;     // 结果集字段值得最大长度
 
@@ -125,12 +127,12 @@ void EXIT(int sig)
 
 void _help()
 {
-    printf("Using:/project/tools/bin/dminingmysql logfilename xmlbuffer\n\n");
+    printf("Using:/project/tools/bin/dminingmysql_oracle logfilename xmlbuffer\n\n");
 
-    printf("Sample:/project/tools/bin/procctl 3600 /project/tools/bin/dminingmysql /log/idc/dminingmysql_ZHOBTCODE.log \"<connstr>127.0.0.1,root,sh269jgl105,mysql,3306</connstr><charset>utf8</charset><selectsql>select obtid,cityname,provname,lat,lon,height from T_ZHOBTCODE</selectsql><fieldstr>obtid,cityname,provname,lat,lon,height</fieldstr><fieldlen>10,30,30,10,10,10</fieldlen><bfilename>ZHOBTCODE</bfilename><efilename>HYCZ</efilename><outpath>/idcdata/dmindata</outpath><timeout>30</timeout><pname>dminingmysql_ZHOBTCODE</pname>\"\n\n");
-    printf("       /project/tools/bin/procctl   30 /project/tools/bin/dminingmysql /log/idc/dminingmysql_ZHOBTMIND.log \"<connstr>127.0.0.1,root,sh269jgl105,mysql,3306</connstr><charset>utf8</charset><selectsql>select obtid,date_format(ddatetime,'%%%%Y-%%%%m-%%%%d %%%%H:%%%%i:%%%%s'),t,p,u,wd,wf,r,vis,keyid from T_ZHOBTMIND where keyid>:1 and ddatetime>timestampadd(minute,-120,now())</selectsql><fieldstr>obtid,ddatetime,t,p,u,wd,wf,r,vis,keyid</fieldstr><fieldlen>10,19,8,8,8,8,8,8,8,15</fieldlen><bfilename>ZHOBTMIND</bfilename><efilename>HYCZ</efilename><outpath>/idcdata/dmindata</outpath><starttime></starttime><incfield>keyid</incfield><incfilename>/idcdata/dmining/dminingmysql_ZHOBTMIND_HYCZ.list</incfilename><timeout>30</timeout><pname>dminingmysql_ZHOBTMIND_HYCZ</pname><maxcount>1000</maxcount><connstr1>127.0.0.1,root,sh269jgl105,mysql,3306</connstr1>\"\n\n");
+    printf("Sample:/project/tools/bin/procctl 3600 /project/tools/bin/dminingmysql_oracle /log/idc/dminingoracle_ZHOBTCODE1.log \"<connstr>invi/sh269jgl105@snorcl11g_130</connstr><charset>Simplified Chinese_China.AL32UTF8</charset><selectsql>select obtid,cityname,provname,lat,lon,height from T_ZHOBTCODE1</selectsql><fieldstr>obtid,cityname,provname,lat,lon,height</fieldstr><fieldlen>10,30,30,10,10,10</fieldlen><bfilename>ZHOBTCODE1</bfilename><efilename>HYCZ</efilename><outpath>/idcdata/dmindata1</outpath><timeout>30</timeout><pname>dminingoracle_ZHOBTCODE1</pname>\"\n\n");
+    printf("       /project/tools/bin/procctl   30 /project/tools/bin/dminingmysql_oracle /log/idc/dminingoracle_ZHOBTMIND1.log \"<connstr>invi/sh269jgl105@snorcl11g_130</connstr><charset>Simplified Chinese_China.AL32UTF8</charset><selectsql>select obtid,to_char(ddatetime,'yyyymmddhh24miss'),t,p,u,wd,wf,r,vis,keyid from T_ZHOBTMIND1 where keyid>:1 and ddatetime>sysdate-0.04</selectsql><fieldstr>obtid,ddatetime,t,p,u,wd,wf,r,vis,keyid</fieldstr><fieldlen>10,19,8,8,8,8,8,8,8,15</fieldlen><bfilename>ZHOBTMIND1</bfilename><efilename>HYCZ</efilename><outpath>/idcdata/dmindata1</outpath><starttime></starttime><incfield>keyid</incfield><incfilename>/idcdata/dmining/dminingoracle_ZHOBTMIND1_HYCZ.list</incfilename><timeout>30</timeout><pname>dminingoracle_ZHOBTMIND1_HYCZ</pname><maxcount>1000</maxcount><connstr1>invi/sh269jgl105@snorcl11g_130</connstr1>\"\n\n");
 
-    printf("本程序是数据中心的公共功能模块，用于从MySQL数据库源表抽取数据，生成xml文件。\n");
+    printf("本程序是数据中心的公共功能模块，用于从Oracle数据库源表抽取数据，生成xml文件。\n");
     printf("logfilename 本程序运行的日志文件。\n");
     printf("xmlbuffer   本程序运行的参数，用xml表示，具体如下：\n\n");
 
@@ -514,22 +516,24 @@ bool writeincfile()
 
         stmt.prepare("update T_MAXINCVALUE set maxincvalue=:1 where pname=:2");
 
-        if(stmt.m_cda.rc == 1146)
-        {
-            // 1146表示表不存在，不存在那就创建表
-            conn1.execute("create table T_MAXINCVALUE(pname varchar(50), maxincvalue numeric(15), primary key(pname))");
-            conn1.execute("insert into T_MAXINCVALUE values('%s',%ld)",starg.pname,imaxincvalue);
-            conn1.commit();
-            return true;
-        }
-
         stmt.bindin(1, &imaxincvalue);
         stmt.bindin(2, starg.pname, 50);
 
         if(stmt.execute() != 0)
         {
-            logfile.Write("stmt.execute() faild\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
-            return false;
+            if(stmt.m_cda.rc == 942)
+            {
+                // 942表示表不存在，不存在那就创建表
+                conn1.execute("create table T_MAXINCVALUE(pname varchar2(50), maxincvalue number(15), primary key(pname))");
+                conn1.execute("insert into T_MAXINCVALUE values('%s',%ld)",starg.pname,imaxincvalue);
+                conn1.commit();
+                return true;
+            }
+            else
+            {
+                logfile.Write("stmt.execute() faild\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
+                return false;
+            }
         }
         if (stmt.m_cda.rpc==0)
         {
