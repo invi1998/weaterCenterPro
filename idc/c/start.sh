@@ -113,3 +113,12 @@
 
 # 清理T_ZHOBTMIND_HIS表中0.05天之前的数据。
 /project/tools/bin/procctl 3600 /project/tools/bin/deletetable_oracle /log/idc/deletetable_oracle_ZHOBTMIND_HIS.log "<connstr>invi/sh269jgl105@snorcl11g_130</connstr><tname>T_ZHOBTMIND_HIS</tname><keycol>rowid</keycol><where>where ddatetime<sysdate-0.05</where></starttime><timeout>120</timeout><pname>deletetable_oracle_ZHOBTMIND_HIS</pname>"
+
+# 把invi.T_ZHOBTCODE1@db132表中的数据同步到scott.T_ZHOBTCODE2。
+/project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTCODE2.log "<localconnstr>scott/tiger@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTCODE1@db132</lnktname><localtname>T_ZHOBTCODE2</localtname><remotecols>obtid,cityname,provname,lat,lon,height,upttime,keyid</remotecols><localcols>obtid,cityname,provname,lat,lon,height,upttime,keyid</localcols><synctype>1</synctype><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTCODE2</pname>"
+
+# 把invi.T_ZHOBTMIND1@db132表中的数据同步到scott.T_ZHOBTMIND2。
+/project/tools/bin/procctl 10 /project/tools/bin/syncincrement_oracle /log/idc/syncincrement_oracle_ZHOBTMIND2.log "<localconnstr>scott/tiger@snorcl11g_130</localconnstr><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><remotetname>T_ZHOBTMIND1</remotetname><lnktname>T_ZHOBTMIND1@db132</lnktname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_oracle_ZHOBTMIND2</pname>"
+
+# 清理scott.T_ZHOBTMIND2表中0.03天之前的数据。
+/project/tools/bin/procctl 3600 /project/tools/bin/deletetable_oracle /log/idc/deletetable_oracle_ZHOBTMIND2.log "<connstr>scott/tiger@snorcl11g_130</connstr><tname>T_ZHOBTMIND2</tname><keycol>rowid</keycol><where>where ddatetime<sysdate-0.05</where></starttime><timeout>120</timeout><pname>deletetable_oracle_ZHOBTMIND2</pname>"
