@@ -33,7 +33,7 @@ CFLAGS = -g
 
 all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver execsql\
 	dminingmysql xmltodb syncupdate syncincrement syncincrementex deletetable migratetable xmltodb_oracle\
-	deletetable_oracle migratetable_oracle dminingmysql_oracle
+	deletetable_oracle migratetable_oracle dminingmysql_oracle syncupdate_oracle
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp
@@ -121,7 +121,11 @@ dminingmysql_oracle:dminingmysql_oracle.cpp
 	g++ $(CFLAGS) -o dminingmysql_oracle dminingmysql_oracle.cpp $(PUBINCL) $(PUBcpp) $(ORAINCL) $(ORALIB) $(ORALIBS) $(ORACPP) -lm -lc
 	cp dminingmysql_oracle ../bin/.
 
+syncupdate_oracle:syncupdate_oracle.cpp _tools_oracle.h _tools_oracle.cpp
+	g++ $(CFLAGS) -o syncupdate_oracle syncupdate_oracle.cpp _tools_oracle.cpp $(PUBINCL) $(PUBcpp) $(ORAINCL) $(ORALIB) $(ORALIBS) $(ORACPP) -lm -lc
+	cp syncupdate_oracle ../bin/.
+
 clean:
 	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver tcpgetfiles execsql dminingmysql\
 			xmltodb syncupdate syncincrement syncincrementex deletetable migratetable xmltodb_oracle deletetable_oracle migratetable_oracle\
-			dminingmysql_oracle
+			dminingmysql_oracle syncupdate_oracle
