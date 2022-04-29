@@ -16,48 +16,36 @@ int var = 0;
 
 int main(int argc, char* argv[])
 {
-    int ii = 10;            // 整形变量是4字节
-    void* pv = nullptr;     // 指针占用的内存是8字节，用于存放变量的地址
-    pv = &ii;               // 正常来说，指针变量存放的是变量的地址
-    printf("pv=%p\n", pv); 
-
-    // 下面这个代码用于演示用指针存放整形数字，然后再讲数据给恢复出来，以用于演示线程中整形变量的传递
-    pv = &ii;       // 先把4字节整形变量ii转为8字节长整形，然后将其转为void*(地址类型)
-    printf("pv=%p\n", pv);
-
-    int jj = 0;
-    jj = *(int*)pv;        // 将pv这个指针保存的内容转为长整型，然后转为整形赋值给jj
-    printf("jj = %d\n", jj);
 
     pthread_t thid1=0,thid2=0,thid3=0,thid4=0,thid5=0;
 
     // 创建线程
-    var = 1;
-    if(pthread_create(&thid1, NULL, thmain1, &var) != 0)
+    int *var1 = new int; *var1 = 1;
+    if(pthread_create(&thid1, NULL, thmain1, var1) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
     }
-    var = 2;
-    if(pthread_create(&thid2, NULL, thmain2, &var) != 0)
+    int *var2 = new int; *var2 = 2;
+    if(pthread_create(&thid2, NULL, thmain2, var2) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
     }
-    var = 3;
-    if(pthread_create(&thid3, NULL, thmain3, &var) != 0)
+    int *var3 = new int; *var3 = 3;
+    if(pthread_create(&thid3, NULL, thmain3, var3) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
     }
-    var = 4;
-    if(pthread_create(&thid4, NULL, thmain4, &var) != 0)
+    int *var4 = new int; *var4 = 4;
+    if(pthread_create(&thid4, NULL, thmain4, var4) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
     }
-    var = 5;
-    if(pthread_create(&thid5, NULL, thmain5, &var) != 0)
+    int *var5 = new int; *var5 = 5;
+    if(pthread_create(&thid5, NULL, thmain5, var5) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
@@ -76,25 +64,30 @@ int main(int argc, char* argv[])
 void * thmain1(void * arg)
 {
     printf("线程1-var=%d\n", *(int*)arg);
+    delete (int*)arg;
     return NULL;
 }
 void * thmain2(void * arg)
 {
     printf("线程2-var=%d\n", *(int*)arg);
+    delete (int*)arg;
     return NULL;
 }
 void * thmain3(void * arg)
 {
     printf("线程3-var=%d\n", *(int*)arg);
+    delete (int*)arg;
     return NULL;
 }
 void * thmain4(void * arg)
 {
     printf("线程4-var=%d\n", *(int*)arg);
+    delete (int*)arg;
     return NULL;
 }
 void * thmain5(void * arg)
 {
     printf("线程5-var=%d\n", *(int*)arg);
+    delete (int*)arg;
     return NULL;
 }
