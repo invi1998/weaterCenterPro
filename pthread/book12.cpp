@@ -7,42 +7,44 @@
 #include <signal.h>
 
 // 线程入口函数
-void * thmain1(void * arg);
+void * thmain(void * arg);
 
-// 信号处理函数
-void func1(int sig)
-{
-    printf("func1 catch signal %d\n", sig);
-}
+int var = 0;
 
 int main(int argc, char* argv[])
 {
 
-    signal(2, func1);
-
-    pthread_t thid1=0;
+    pthread_t thid1=0, thid2 = 0;
 
     // 创建线程（将线程属性作为参数传递给创建线程函数）
-    if(pthread_create(&thid1, NULL, thmain1, NULL) != 0)
+    if(pthread_create(&thid1, NULL, thmain, NULL) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
     }
 
-    sleep(5);
-    pthread_kill(thid1, 15);
+    if(pthread_create(&thid2, NULL, thmain, NULL) != 0)
+    {
+        printf("线程创建失败\n");
+        exit(-1);
+    }
 
     // 等待子线程退出
     printf("join...\n");
     pthread_join(thid1, NULL);
+    pthread_join(thid2, NULL);
     printf("join-ok\n");
+    printf("var = %d\n", var);
 }
 
-void * thmain1(void * arg)
+void * thmain(void * arg)
 {
-    printf("sleep begin...\n");
-    sleep(10);
-    printf("sleep ok\n");
+    for(int i = 0; i< 100000; i++)
+    {
+        // var++;
+        // 用原子操作中的加法函数
+        __sync_fetch_and_add(&var, 1);
+    }
 
     return (void*)10;
 }
