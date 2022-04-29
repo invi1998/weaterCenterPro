@@ -125,9 +125,9 @@ void _help(char *argv[])
 {
   printf("Using:/project/tools/bin/syncincrement_oracle logfilename xmlbuffer\n\n");
 
-  printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncincrement_oracle /log/idc/syncincrement_oracle_ZHOBTMIND2.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><remotetname>T_ZHOBTMIND1</remotetname><lnktname>T_ZHOBTMIND1@db132</lnktname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_oracle_ZHOBTMIND2</pname>\"\n\n");
+  printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncincrement_oracle /log/idc/syncincrement_oracle_ZHOBTMIND2.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><remotetname>T_ZHOBTMIND1</remotetname><lnktname>T_ZHOBTMIND1@db130</lnktname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_oracle_ZHOBTMIND2</pname>\"\n\n");
 
-  printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncincrement_oracle /log/idc/syncincrement_oracle_ZHOBTMIND3.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><remotetname>T_ZHOBTMIND1</remotetname><lnktname>T_ZHOBTMIND1@db132</lnktname><localtname>T_ZHOBTMIND3</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><where>and obtid like '54%%%%'</where><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_oracle_ZHOBTMIND3</pname>\"\n\n");
+  printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncincrement_oracle /log/idc/syncincrement_oracle_ZHOBTMIND3.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><remotetname>T_ZHOBTMIND1</remotetname><lnktname>T_ZHOBTMIND1@db130</lnktname><localtname>T_ZHOBTMIND3</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><where>and obtid like '54%%%%'</where><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_oracle_ZHOBTMIND3</pname>\"\n\n");
 
   printf("本程序是数据中心的公共功能模块，采用增量的方法同步Oracle数据库之间的表。\n\n");
 
@@ -278,7 +278,7 @@ bool _syncincrement(bool &bcontinue)
 
   // 准备插入本地表数据的SQL语句，一次插入starg.maxcount条记录。
   // insert into T_ZHOBTMIND2(obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid)
-  //                   select obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid from T_ZHOBTMIND1@db132
+  //                   select obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid from T_ZHOBTMIND1@db130
   //                    where keyid in (:1,:2,:3);
   sqlstatement stmtins(&connloc);    // 向本地表中插入数据的SQL语句。
   stmtins.prepare("insert into %s(%s) select %s from %s where %s in (%s)",starg.localtname,starg.localcols,starg.remotecols,starg.lnktname,starg.remotekeycol,bindstr);

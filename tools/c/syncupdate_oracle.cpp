@@ -104,13 +104,13 @@ void _help(char *argv[])
 {
   printf("Using:/project/tools/bin/syncupdate_oracle logfilename xmlbuffer\n\n");
 
-  printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTCODE2.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTCODE1@db132</lnktname><localtname>T_ZHOBTCODE2</localtname><remotecols>obtid,cityname,provname,lat,lon,height,upttime,keyid</remotecols><localcols>obtid,cityname,provname,lat,lon,height,upttime,keyid</localcols><synctype>1</synctype><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTCODE2</pname>\"\n\n");
+  printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTCODE2.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTCODE1@db130</lnktname><localtname>T_ZHOBTCODE2</localtname><remotecols>obtid,cityname,provname,lat,lon,height,upttime,keyid</remotecols><localcols>obtid,cityname,provname,lat,lon,height,upttime,keyid</localcols><synctype>1</synctype><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTCODE2</pname>\"\n\n");
 
-  // 因为测试的需要，xmltodb程序每次会删除T_ZHOBTCODE1@db132中的数据，全部的记录重新入库，keyid会变。
+  // 因为测试的需要，xmltodb程序每次会删除T_ZHOBTCODE1@db130中的数据，全部的记录重新入库，keyid会变。
   // 所以以下脚本不能用keyid，要用obtid，用keyid会出问题，可以试试。
-  printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTCODE3.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTCODE1@db132</lnktname><localtname>T_ZHOBTCODE3</localtname><remotecols>obtid,cityname,provname,lat,lon,height,upttime,keyid</remotecols><localcols>obtid,cityname,provname,lat,lon,height,upttime,keyid</localcols><where>where obtid like '54%%%%'</where><synctype>2</synctype><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><remotetname>T_ZHOBTCODE1</remotetname><remotekeycol>obtid</remotekeycol><localkeycol>obtid</localkeycol><maxcount>10</maxcount><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTCODE3</pname>\"\n\n");
+  printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTCODE3.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTCODE1@db130</lnktname><localtname>T_ZHOBTCODE3</localtname><remotecols>obtid,cityname,provname,lat,lon,height,upttime,keyid</remotecols><localcols>obtid,cityname,provname,lat,lon,height,upttime,keyid</localcols><where>where obtid like '54%%%%'</where><synctype>2</synctype><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><remotetname>T_ZHOBTCODE1</remotetname><remotekeycol>obtid</remotekeycol><localkeycol>obtid</localkeycol><maxcount>10</maxcount><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTCODE3</pname>\"\n\n");
 
-  printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTMIND2.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTMIND1@db132</lnktname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><where>where ddatetime>sysdate-0.04</where><synctype>2</synctype><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTMIND2</pname>\"\n\n");
+  printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncupdate_oracle /log/idc/syncupdate_oracle_ZHOBTMIND2.log \"<localconnstr>invi/sh269jgl105@snorcl11g_130</localconnstr><charset>Simplified Chinese_China.AL32UTF8</charset><lnktname>T_ZHOBTMIND1@db130</lnktname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</localcols><where>where ddatetime>sysdate-0.04</where><synctype>2</synctype><remoteconnstr>invi/sh269jgl105@snorcl11g_130</remoteconnstr><remotetname>T_ZHOBTMIND1</remotetname><remotekeycol>keyid</remotekeycol><localkeycol>keyid</localkeycol><maxcount>300</maxcount><timeout>50</timeout><pname>syncupdate_oracle_ZHOBTMIND2</pname>\"\n\n");
 
   printf("本程序是数据中心的公共功能模块，采用刷新的方法同步Oracle数据库之间的表。\n\n");
 
@@ -303,7 +303,7 @@ bool _syncupdate()
 
   // 准备插入本地表数据的SQL语句，一次插入starg.maxcount条记录。
   // insert into T_ZHOBTCODE3(obtid ,cityname,provname,lat,lon,height,upttime,keyid)
-  //                   select obtid,cityname,provname,lat,lon,height,upttime,keyid from T_ZHOBTCODE1@db132 
+  //                   select obtid,cityname,provname,lat,lon,height,upttime,keyid from T_ZHOBTCODE1@db130 
   //                    where obtid in (:1,:2,:3);
   stmtins.prepare("insert into %s(%s) select %s from %s where %s in (%s)",starg.localtname,starg.localcols,starg.remotecols,starg.lnktname,starg.remotekeycol,bindstr);
   for (int ii=0;ii<starg.maxcount;ii++)
