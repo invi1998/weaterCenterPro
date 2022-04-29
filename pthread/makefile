@@ -34,7 +34,7 @@ book11:book11.cpp
 	g++ -g -o book11 book11.cpp -lpthread
 
 book12:book12.cpp
-	g++ -g -o book12 book12.cpp -lpthread
+	g++ -g -o book12 book12.cpp -lpthread -std=c++11
 
 
 clean:

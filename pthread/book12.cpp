@@ -5,11 +5,14 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <atomic>
+#include <iostream>
 
 // 线程入口函数
 void * thmain(void * arg);
 
-int var = 0;
+// int var = 0;
+std::atomic<int> var;
 
 int main(int argc, char* argv[])
 {
@@ -34,7 +37,8 @@ int main(int argc, char* argv[])
     pthread_join(thid1, NULL);
     pthread_join(thid2, NULL);
     printf("join-ok\n");
-    printf("var = %d\n", var);
+    // printf("var = %d\n", var);
+    std::cout << "var = " << var << std::endl;
 }
 
 void * thmain(void * arg)
@@ -43,7 +47,8 @@ void * thmain(void * arg)
     {
         // var++;
         // 用原子操作中的加法函数
-        __sync_fetch_and_add(&var, 1);
+        // __sync_fetch_and_add(&var, 1);
+        var++;
     }
 
     return (void*)10;
