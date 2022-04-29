@@ -12,16 +12,18 @@ int main(int argc, char* argv[])
 
     pthread_t thid1=0;
 
-    // 创建线程
-    if(pthread_create(&thid1, NULL, thmain1, NULL) != 0)
+    pthread_attr_t attr;        // 声明线程属性的数据结构
+    pthread_attr_init(&attr);   // 初始化
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);        // 设置线程的分离属性
+
+    // 创建线程（将线程属性作为参数传递给创建线程函数）
+    if(pthread_create(&thid1, &attr, thmain1, NULL) != 0)
     {
         printf("线程创建失败\n");
         exit(-1);
     }
 
-    // 设置线程分离
-    // pthread_detach(thid1);
-
+    sleep(10);
     // 等待子线程退出
     printf("join...\n");
 
@@ -35,7 +37,6 @@ int main(int argc, char* argv[])
 
 void * thmain1(void * arg)
 {
-    pthread_detach(pthread_self());
     for(int i = 0; i < 3; i++)
     {
         sleep(1);
