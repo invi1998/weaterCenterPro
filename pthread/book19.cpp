@@ -22,6 +22,9 @@ std::vector<struct st_message> vcache;      // 用vector容器做缓存
 void incache(int sig);          // 生产者（数据入队列）
 void *outcache(void* arg);      // 消费者（数据出队列线程主函数）
 
+// 线程清理函数
+void thcleanup(void* arg);
+
 int main(int argc, char* argv[])
 {
 
@@ -32,6 +35,11 @@ int main(int argc, char* argv[])
     pthread_create(&thid1, NULL, outcache, NULL);
     pthread_create(&thid2, NULL, outcache, NULL);
     pthread_create(&thid3, NULL, outcache, NULL);
+
+    sleep(5);
+    pthread_cancel(thid1);
+    pthread_cancel(thid2);
+    pthread_cancel(thid3);
 
     pthread_join(thid1, NULL);
     pthread_join(thid2, NULL);
@@ -51,8 +59,11 @@ void incache(int sig)          // 生产者（数据入队列）
     pthread_mutex_lock(&mutex);         // 给缓存队列加锁
 
     // 生产数据，放入缓存队列
-    stmesg.mesgid = mesgid++;
-    vcache.push_back(stmesg);
+    stmesg.mesgid = mesgid++;vcache.push_back(stmesg);
+    stmesg.mesgid = mesgid++;vcache.push_back(stmesg);
+    // stmesg.mesgid = mesgid++;vcache.push_back(stmesg);
+    // stmesg.mesgid = mesgid++;vcache.push_back(stmesg);
+    // stmesg.mesgid = mesgid++;vcache.push_back(stmesg);
 
     pthread_mutex_unlock(&mutex);       // 给缓存队列解锁
     pthread_cond_broadcast(&cond);         // 发送条件信号，激活全部线程
@@ -60,12 +71,16 @@ void incache(int sig)          // 生产者（数据入队列）
 
 void *outcache(void* arg)      // 消费者（数据出队列线程主函数）
 {
+    // 将线程清理函数入栈
+    pthread_cleanup_push(thcleanup, NULL);
+
     struct st_message stmsg;
 
     while (true)
     {
         pthread_mutex_lock(&mutex);         // 给缓存队列加锁
 
+        // if(vcache.size() == 0)
         // 如果缓存队列为空，等待，用while防止条件变量被虚假唤醒
         while(vcache.size() == 0)
         {
@@ -84,4 +99,18 @@ void *outcache(void* arg)      // 消费者（数据出队列线程主函数）
         usleep(100);
     }
     
+    // 将线程清理函数出栈并执行
+    pthread_cleanup_pop(1);
+}
+
+// 线程清理函数
+void thcleanup(void* arg)
+{
+    // 在这里释放线程资源，关于文件，断开网络连接，回滚数据库事务，释放锁等
+    printf("clearnup ok\n");
+
+    // 释放互斥锁
+    pthread_mutex_unlock(&mutex);
+
+    return;
 }
