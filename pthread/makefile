@@ -1,4 +1,4 @@
-all: book1 book2 book3 book4 book5 book6 book7 book8 book9 book10 book11 book12 book13 book14 book15
+all: book1 book2 book3 book4 book5 book6 book7 book8 book9 book10 book11 book12 book13 book14 book15 book16
 
 book1:book1.cpp
 	g++ -g -o book1 book1.cpp -lpthread
@@ -45,6 +45,8 @@ book14:book14.cpp
 book15:book15.cpp
 	g++ -g -o book15 book15.cpp -lpthread
 
+book16:book16.cpp
+	g++ -g -o book16 book16.cpp -lpthread
 
 clean:
-	rm book1 book2 book3 book4 book5 book6 book7 book8 book9 book10 book11 book12 book13 book14 book15
+	rm book1 book2 book3 book4 book5 book6 book7 book8 book9 book10 book11 book12 book13 book14 book15 book16
