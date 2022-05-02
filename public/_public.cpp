@@ -3,7 +3,7 @@
 /*   作者：invi                                                                       */
 /*****************************************************************************************/
 
-#include "_public.h"  
+#include "_public.h"
 
 // 安全的strcpy函数。
 // dest：目标字符串，不需要初始化，在STRCPY函数中有初始化代码。
@@ -947,8 +947,8 @@ void timetostr(const time_t ltime,char *stime,const char *fmt)
 
   strcpy(stime,"");
 
-  struct tm sttm = *localtime ( &ltime );
-  // struct tm sttm; localtime_r(&ltime,&sttm); 
+  // struct tm sttm = *localtime ( &ltime );
+  struct tm sttm; localtime_r(&ltime,&sttm);    // 线程安全版本的（可重入的localtime）
 
   sttm.tm_year=sttm.tm_year+1900;
   sttm.tm_mon++;
@@ -1093,14 +1093,14 @@ CLogFile::CLogFile(const long MaxLogSize)
   m_MaxLogSize=MaxLogSize;
   if (m_MaxLogSize<10) m_MaxLogSize=10;
 
-  // pthread_pin_init(&spin,0);  // 初学暂时不要关心这行代码。
+  pthread_spin_init(&spin,0);  // 初学暂时不要关心这行代码。
 }
 
 CLogFile::~CLogFile()
 {
   Close();
 
-  // pthread_spin_destroy(&spin);  // 初学暂时不要关心这行代码。
+  pthread_spin_destroy(&spin);  // 初学暂时不要关心这行代码。
 }
 
 void CLogFile::Close()
@@ -1170,7 +1170,7 @@ bool CLogFile::Write(const char *fmt,...)
 {
   if (m_tracefp == 0) return false;
 
-  // pthread_spin_lock(&spin);  // 初学暂时不要关心这行代码。
+  pthread_spin_lock(&spin);  // 初学暂时不要关心这行代码。
 
   if (BackupLogFile() == false) return false;
 
@@ -1183,7 +1183,7 @@ bool CLogFile::Write(const char *fmt,...)
 
   if (m_bEnBuffer==false) fflush(m_tracefp);
 
-  // pthread_spin_unlock(&spin);  // 初学暂时不要关心这行代码。
+  pthread_spin_unlock(&spin);  // 初学暂时不要关心这行代码。
 
   return true;
 }
@@ -1194,7 +1194,7 @@ bool CLogFile::WriteEx(const char *fmt,...)
 {
   if (m_tracefp == 0) return false;
 
-  // pthread_spin_lock(&spin);  // 初学暂时不要关心这行代码。
+  pthread_spin_lock(&spin);  // 初学暂时不要关心这行代码。
 
   va_list ap;
   va_start(ap,fmt);
@@ -1203,7 +1203,7 @@ bool CLogFile::WriteEx(const char *fmt,...)
 
   if (m_bEnBuffer==false) fflush(m_tracefp);
 
-  // pthread_spin_unlock(&spin);  // 初学暂时不要关心这行代码。
+  pthread_spin_unlock(&spin);  // 初学暂时不要关心这行代码。
 
   return true;
 }
