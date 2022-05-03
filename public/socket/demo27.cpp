@@ -24,14 +24,8 @@ int main(int argc,char *argv[])
 	// 生成http请求报文(注意，请求报文每一块内容上都需要加上回车换行\r\n)
 	// GET /lesson/546.html HTTP/1.1
 	// Host: 192.168.31.133:8080
-	// Connection: keep-alive
-	// Upgrade-Insecure-Requests: 1
-	// User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36
-	// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-	// Accept-Encoding: gzip, deflate
-	// Accept-Language: zh-CN,zh;q=0.9
-	sprintf(buffer, "GET / HTTP/1.1\r\n",
-			"Host: %s:%s\r\n",
+	sprintf(buffer, "GET / HTTP/1.1\r\n"
+			"Host: %s:%s\r\n"
 			"\r\n", argv[1], argv[2]
 	);
 
@@ -39,9 +33,16 @@ int main(int argc,char *argv[])
 	send(TcpClient.m_connfd, buffer, strlen(buffer), 0);
 
 	// 接收服务端返回的网页内容
-	memset(buffer, 0, sizeof(buffer));
-	recv(TcpClient.m_connfd, buffer, sizeof(buffer), 0);
-	printf("%s", buffer);
-
+	while (true)
+	{
+		/* code */
+		memset(buffer, 0, sizeof(buffer));
+		if(recv(TcpClient.m_connfd, buffer, 102400, 0) <= 0)
+		{
+			return -1;
+		};
+		printf("%s", buffer);
+	}
+	
 }
 
