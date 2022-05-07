@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   connection conn;      // 数据库连接类
 
   // 登陆数据库
-  if(conn.connecttodb("192.168.31.133,root,sh269jgl105,mysql,3306", "utf8") != 0)
+  if(conn.connecttodb("192.168.31.133,root,19981021115,mysql,3306", "utf8") != 0)
   {
     // 登陆数据库，肯定要判断返回值，如果失败了，需要将错误信息做一个提示（如果是正式服务，需要记录日志）
     printf("connect database failed\n %s\n", conn.m_cda.message);
