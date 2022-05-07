@@ -26,15 +26,15 @@ all:crtsurfdata obtcodetodb obtmindtodb
 # 编译命令（在这个程序中使用了开发框架的头文件，所以需要把开发框架的头文件目录给指定出来,然后开发框架的cpp文件我们给他直接包含进来编译）
 # 完成编译之后，把它拷贝到bin目录
 crtsurfdata:crtsurfdata.cpp
-	g++ $(CFLAGS) -o crtsurfdata crtsurfdata.cpp $(PUBINCL) $(PUBCPP) -lm -lc
+	g++ $(CFLAGS) -o crtsurfdata crtsurfdata.cpp $(PUBINCL) $(PUBCPP) -lpthread -lm -lc
 	cp crtsurfdata ../bin/.
 
 obtcodetodb:obtcodetodb.cpp
-	g++ $(CFLAGS) -o obtcodetodb obtcodetodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lm -lc
+	g++ $(CFLAGS) -o obtcodetodb obtcodetodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) -lpthread -lm -lc
 	cp obtcodetodb ../bin/.
 
 obtmindtodb:obtmindtodb.cpp idcapp.h idcapp.cpp
-	g++ $(CFLAGS) -o obtmindtodb obtmindtodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) idcapp.cpp -lm -lc
+	g++ $(CFLAGS) -o obtmindtodb obtmindtodb.cpp $(PUBINCL) $(PUBCPP) $(MYSQLINCL) $(MYSQLLIB) $(MYSQLLIBS) $(MYSQLCPP) idcapp.cpp -lpthread -lm -lc
 	cp obtmindtodb ../bin/.
 
 # 编译的清理

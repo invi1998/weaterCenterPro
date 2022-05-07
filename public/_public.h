@@ -4,7 +4,7 @@
 /****************************************************************************************/
 
 #ifndef __PUBLIC_HH
-#define __PUBLIC_HH 1
+#define __PUBLIC_HH
 
 #include "_cmpublic.h"
 
