@@ -52,7 +52,7 @@ int main(int argc,char *argv[])
 	memset(buffer, 0, sizeof(buffer));
 	sprintf(buffer, "HTTP/1.1 200 OK\r\n"\
 				"Server: demo26\r\n"\
-				"Content-Type: text/html;charset=utf-8"\
+				"Content-Type: text/html;charset=utf-8\r\n"\
 				"\r\n"
 				);
 				// "Content-Length: 118329\r\n"\
@@ -61,7 +61,7 @@ int main(int argc,char *argv[])
 	if (Writen(TcpServer.m_connfd,buffer,strlen(buffer))== false) return -1;
 
 	// 再把html文件的内容发送给客户端
-	if(sendhtmlFile(TcpServer.m_connfd, "index.html") == false)
+	if(sendhtmlFile(TcpServer.m_connfd, "SURF_ZH_20220507115319_6313.json") == false)
 	{
 		printf("error\n");
 		return -1;
