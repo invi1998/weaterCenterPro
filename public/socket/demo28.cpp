@@ -7,6 +7,10 @@
 
 // 解析get请求中的参数，然后从数据库表T_ZHOBTMIND1中查询数据，返回给客户端
 bool SendData(const int sockfd, const char * strget);
+
+// 解析url并将解析内容存放在name里
+// http://127.0.0.1:8080/api?username=xx&password=xx&inyrtname=getZHOBTMIND1&begintime=20220507123000&endtime=20220507123000
+bool getvalue(const char* strget, const char* name, char *value, const int len);
  
 int main(int argc,char *argv[])
 {
@@ -108,7 +112,36 @@ bool SendData(const int sockfd, const char * strget)
 	// 。。。。
 	// 连接数据库
 	connection conn;
-	conn.connecttodb("invi/password@");
+	conn.connecttodb("invi/password@snorcl11g_130", "Simplified Chinese_China.AL32UTF8");
+
+	// 准备程序数据的sql
+	sqlstatement stmt(&conn);
+
+	stmt.prepare("select '<obtid>'||obtid||'</obtid>'||'<ddatetime>'||to_char(ddatetime,'yyyy-mm-dd hh24:mi:ss')||'</ddatetime>'||'<t>'||t||'</t>'||'<p>'||p||'</p>'||'<u>'||u||'</u>'||'<keyid>'||keyid||'</keyid>'||'<endl/>' from T_ZHOBTMIND1 where obtid=:1 and ddatetime>to_date(:2,'yyyymmddhh24miss') and ddatetime<to_date(:3,'yyyymmddhh24miss')");
+	
+	char strxml[1001];		// 存放sql语句结果集
+	stmt.bindout(1, strxml, 1000);
+	stmt.bindin(1, obtid, 10);
+	stmt.bindin(2, begintime, 14);
+	stmt.bindin(3, endtime, 14);
+
+	stmt.execute();
+
+	Writen(sockfd, "<data>\n", strlen("<data>\n"));		// 返回xml的头部标签
+
+	while (true)
+	{
+		memset(strxml, 0, sizeof(strxml));
+
+		if(stmt.next()!=0) break;
+
+		strcat(strxml, "\n");
+
+		Writen(sockfd, strxml, strlen(strxml));			// 返回xml的每一行
+	}
+
+	Writen(sockfd, "</data>\n", strlen("</data>\n"));		// 返回xml的尾部标签
+	
 
 	return true;
   
