@@ -33,7 +33,8 @@ CFLAGS = -g
 
 all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver execsql\
 	dminingmysql xmltodb syncupdate syncincrement syncincrementex deletetable migratetable xmltodb_oracle\
-	deletetable_oracle migratetable_oracle dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle
+	deletetable_oracle migratetable_oracle dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle\
+	webserver
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp -lpthread
@@ -133,7 +134,11 @@ syncincrementex_oracle:syncincrementex_oracle.cpp _tools_oracle.h _tools_oracle.
 	g++ $(CFLAGS) -o syncincrementex_oracle syncincrementex_oracle.cpp _tools_oracle.cpp $(PUBINCL) $(PUBcpp) $(ORAINCL) $(ORALIB) $(ORALIBS) $(ORACPP) -lpthread -lm -lc
 	cp syncincrementex_oracle ../bin/.
 
+webserver:webserver.cpp _tools_oracle.h _tools_oracle.cpp
+	g++ $(CFLAGS) -o webserver webserver.cpp _tools_oracle.cpp $(PUBINCL) $(PUBcpp) $(ORAINCL) $(ORALIB) $(ORALIBS) $(ORACPP) -lpthread -lm -lc
+	cp webserver ../bin/.
+
 clean:
 	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver tcpgetfiles execsql dminingmysql\
 			xmltodb syncupdate syncincrement syncincrementex deletetable migratetable xmltodb_oracle deletetable_oracle migratetable_oracle\
-			dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle
+			dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle webserver
