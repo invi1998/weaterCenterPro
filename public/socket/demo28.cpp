@@ -108,7 +108,7 @@ bool SendData(const int sockfd, const char * strget)
 	// 。。。。
 	// 连接数据库
 	connection conn;
-	conn.connecttodb("invi/19981021115@");
+	conn.connecttodb("invi/password@");
 
 	return true;
   

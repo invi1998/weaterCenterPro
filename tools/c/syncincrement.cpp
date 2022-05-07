@@ -109,9 +109,9 @@ void _help(char *argv[])
 {
     printf("Using:/project/tools/bin/syncincrement logfilename xmlbuffer\n\n");
 
-    printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncincrement /log/idc/syncincrement_ZHOBTMIND2.log \"<localconnstr>192.168.174.129,root,19981021115,mysql,3306</localconnstr><remoteconnstr>192.168.31.133,root,19981021115,mysql,3306</remoteconnstr><charset>utf8</charset><remotetname>T_ZHOBTMIND1</remotetname><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_ZHOBTMIND2</pname>\"\n\n");
+    printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/syncincrement /log/idc/syncincrement_ZHOBTMIND2.log \"<localconnstr>192.168.174.129,root,password,mysql,3306</localconnstr><remoteconnstr>192.168.31.133,root,password,mysql,3306</remoteconnstr><charset>utf8</charset><remotetname>T_ZHOBTMIND1</remotetname><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND2</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_ZHOBTMIND2</pname>\"\n\n");
 
-    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncincrement /log/idc/syncincrement_ZHOBTMIND3.log \"<localconnstr>192.168.174.129,root,19981021115,mysql,3306</localconnstr><remoteconnstr>192.168.31.133,root,19981021115,mysql,3306</remoteconnstr><charset>utf8</charset><remotetname>T_ZHOBTMIND1</remotetname><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND3</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>and obtid like '54%%%%'</where><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_ZHOBTMIND3</pname>\"\n\n");
+    printf("       /project/tools/bin/procctl 10 /project/tools/bin/syncincrement /log/idc/syncincrement_ZHOBTMIND3.log \"<localconnstr>192.168.174.129,root,password,mysql,3306</localconnstr><remoteconnstr>192.168.31.133,root,password,mysql,3306</remoteconnstr><charset>utf8</charset><remotetname>T_ZHOBTMIND1</remotetname><fedtname>LK_ZHOBTMIND1</fedtname><localtname>T_ZHOBTMIND3</localtname><remotecols>obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime,keyid</remotecols><localcols>stid,ddatetime,t,p,u,wd,wf,r,vis,upttime,recid</localcols><where>and obtid like '54%%%%'</where><remotekeycol>keyid</remotekeycol><localkeycol>recid</localkeycol><maxcount>300</maxcount><timetvl>2</timetvl><timeout>50</timeout><pname>syncincrement_ZHOBTMIND3</pname>\"\n\n");
 
     printf("本程序是数据中心的公共功能模块，采用增量的方法同步MySQL数据库之间的表。\n\n");
 
@@ -239,7 +239,7 @@ create table LK_ZHOBTCODE1
    keyid                int not null auto_increment comment '记录编号，自动增长列。',
    primary key (obtid),
    unique key ZHOBTCODE1_KEYID (keyid)
-)ENGINE=FEDERATED CONNECTION='mysql://root:19981021115@192.168.31.133:3306/mysql/T_ZHOBTCODE1';
+)ENGINE=FEDERATED CONNECTION='mysql://root:password@192.168.31.133:3306/mysql/T_ZHOBTCODE1';
 
 create table LK_ZHOBTMIND1
 (
@@ -256,7 +256,7 @@ create table LK_ZHOBTMIND1
    keyid                bigint not null auto_increment comment '记录编号，自动增长列。',
    primary key (obtid, ddatetime),
    unique key ZHOBTMIND1_KEYID (keyid)
-)ENGINE=FEDERATED CONNECTION='mysql://root:19981021115@192.168.31.133:3306/mysql/T_ZHOBTMIND1';
+)ENGINE=FEDERATED CONNECTION='mysql://root:password@192.168.31.133:3306/mysql/T_ZHOBTMIND1';
 */
 
 // 业务处理主函数。

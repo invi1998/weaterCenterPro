@@ -11,7 +11,7 @@ int main(int argc, char * argv[])
 
     // 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码。
     // 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-    if(conn.connecttodb("192.168.31.133,root,19981021115,mysql,3306", "utf8") != 0)
+    if(conn.connecttodb("192.168.31.133,root,password,mysql,3306", "utf8") != 0)
     {
         // 登陆数据库，肯定要判断返回值，如果失败了，需要将错误信息做一个提示（如果是正式服务，需要记录日志）
         printf("connect database failed\n %s\n", conn.m_cda.message);

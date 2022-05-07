@@ -101,7 +101,7 @@ void _help(char *argv[])
 {
     printf("Using:/project/tools/bin/xmltodb_oracle logfilename xmlbuffer\n\n");
 
-    printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/xmltodb_oracle /log/idc/xmltodb_oracle_vip2.log \"<connstr>invi/19981021115@snorcl11g_130</connstr><charset>Simplified Chinese_China.AL32UTF8</charset><inifilename>/project/idc/ini/xmltodb.xml</inifilename><xmlpath>/idcdata/xmltodb/vip2</xmlpath><xmlpathbak>/idcdata/xmltodb/vip2bak</xmlpathbak><xmlpatherr>/idcdata/xmltodb/vip2err</xmlpatherr><timetvl>5</timetvl><timeout>50</timeout><pname>xmltodb_oracle_vip2</pname>\"\n\n");
+    printf("Sample:/project/tools/bin/procctl 10 /project/tools/bin/xmltodb_oracle /log/idc/xmltodb_oracle_vip2.log \"<connstr>invi/password@snorcl11g_130</connstr><charset>Simplified Chinese_China.AL32UTF8</charset><inifilename>/project/idc/ini/xmltodb.xml</inifilename><xmlpath>/idcdata/xmltodb/vip2</xmlpath><xmlpathbak>/idcdata/xmltodb/vip2bak</xmlpathbak><xmlpatherr>/idcdata/xmltodb/vip2err</xmlpatherr><timetvl>5</timetvl><timeout>50</timeout><pname>xmltodb_oracle_vip2</pname>\"\n\n");
 
     printf("本程序是数据中心的公共功能模块，用于把xml文件入库到Oracle的表中。\n");
     printf("logfilename   本程序运行的日志文件。\n");

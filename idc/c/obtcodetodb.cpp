@@ -35,7 +35,7 @@ int main(int argc, char * argv[])
         printf("\n");
         printf("Using:./obtcodetodb inifile connstr charset logfile\n");
 
-        printf("Example:/project/tools/bin/procctl 120 /project/idc/bin/obtcodetodb /project/idc/ini/stcode.ini \"192.168.31.133,root,19981021115,mysql,3306\" utf8 /log/idc/obtcodetodb.log\n\n");
+        printf("Example:/project/tools/bin/procctl 120 /project/idc/bin/obtcodetodb /project/idc/ini/stcode.ini \"192.168.31.133,root,password,mysql,3306\" utf8 /log/idc/obtcodetodb.log\n\n");
 
         printf("本程序用于把全国站点参数数据保存到数据库表中，如果站点不存在则插入，站点已存在则更新。\n");
         printf("inifile 站点参数文件名（全路径）。\n");

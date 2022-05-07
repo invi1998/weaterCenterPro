@@ -45,7 +45,7 @@ public:
 
   // 登录数据库。
   // connstr：数据库的登录参数，格式："host= user= password= dbname= port=",
-  // 例如："host=172.16.0.15 user=invi password=19981021115 dbname=invidb port=5432"
+  // 例如："host=172.16.0.15 user=invi password=password dbname=invidb port=5432"
   // username-登录的用户名，password-登录的密码，dbname-缺省数据库，port-mysql服务的端口。
   // charset：数据库的字符集，如"gbk"，必须与数据库保持一致，否则会出现中文乱码的情况。
   // autocommitopt：是否启用自动提交，0-不启用，1-启用，缺省是不启用。

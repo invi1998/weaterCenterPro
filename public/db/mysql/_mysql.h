@@ -65,7 +65,7 @@ public:
 
   // 登录数据库。
   // connstr：数据库的登录参数，格式："ip,username,password,dbname,port"，
-  // 例如："172.16.0.15,invi,19981021115,invidb,3306"。
+  // 例如："172.16.0.15,invi,password,invidb,3306"。
   // charset：数据库的字符集，如"utf8"、"gbk"，必须与数据库保持一致，否则会出现中文乱码的情况。
   // autocommitopt：是否启用自动提交，0-不启用，1-启用，缺省是不启用。
   // 返回值：0-成功，其它失败，失败的代码在m_cda.rc中，失败的描述在m_cda.message中。
