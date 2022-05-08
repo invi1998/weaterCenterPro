@@ -1,5 +1,5 @@
 /*
- * 程序名：demo20.cpp，此程序演示采用开发框架的CTcpServer类实现socket通讯多线程的服务端。
+ * 程序名：webserver.cpp，此程序是数据服务总线的服务端程序。
 
  * author：invi
 */
@@ -47,9 +47,12 @@ bool getvalue(const char* strget, const char* name, char *value, const int len);
 // 判断用户是否有调用接口的权限，如果没有，放回没有权限的响应报文，线程退出
 bool CheckPerm(connection* conn, const char* strrecvbuf, const int sockfd);
 
+// 再执行接口的sql语句，把数据放回给客户端
+bool ExecSQL(connection* conn, const char* strrecvbuf, const int sockfd);
+
 int main(int argc,char *argv[])
 {
-	 if (argc!=3) { _help(argv); return -1; }
+	if (argc!=3) { _help(argv); return -1; }
 
     // 关闭全部的信号和输入输出。
     // 设置信号,在shell状态下可用 "kill + 进程号" 正常终止些进程
@@ -106,13 +109,12 @@ void EXIT(int sig)   // 线程退出函数
 	TcpServer.CloseListen();
 
 	// 取消全部的线程
+    pthread_spin_lock(&spin);
 	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
 	{
 		pthread_cancel(*iter);
 	}
-
-	// 然后退出
-	logfile.Write("父进程(%d)退出, sig = %d！\n", getpid(), sig);
+    pthread_spin_unlock(&spin);
 
 	sleep(1);		// 休息1s。保证线程清理函数能够被调用
 
@@ -168,20 +170,17 @@ void* thmain(void *arg)		// 线程入口函数
     if(CheckPerm(&conn, strrecvbuf, connfd) == false) pthread_exit(0);
 
     // 先把响应报文的头部发送给客户端
+    char strsendbuf[1024];
+    memset(strsendbuf, 0, sizeof(strsendbuf));
+    sprintf(strsendbuf, \
+            "HTTP/1.1 200 OK\r\n"\
+            "Server:webserver\r\n"\
+            "Content-Type:text/html;charset=utf-8\r\n\r\n");
+
+    Writen(connfd, strsendbuf, strlen(strsendbuf));
 
     // 再执行接口的sql语句，把数据放回给客户端
-
-	pthread_spin_lock(&spin);
-	// 把本线程的id从容器中删除
-	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
-	{
-		if(pthread_equal(*iter, pthread_self()) == 0)
-		{
-			vpid.erase(iter);
-			break;
-		}
-	}
-	pthread_spin_unlock(&spin);
+    if(ExecSQL(&conn, strrecvbuf, connfd) == false) pthread_exit(0);
 
 	pthread_cleanup_pop(1);
 
@@ -193,6 +192,18 @@ void thcleanup(void *arg)		// 线程清理函数
 	int conndfd = (int)(long)arg;
 
 	close(conndfd);
+
+    pthread_spin_lock(&spin);
+	// 把本线程的id从容器中删除
+	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
+	{
+		if(pthread_equal(*iter, pthread_self()) == 0)
+		{
+			vpid.erase(iter);
+			break;
+		}
+	}
+	pthread_spin_unlock(&spin);
 
 	logfile.Write("线程%lu退出\n", pthread_self());
 }
@@ -261,7 +272,7 @@ bool Login(connection* conn, const char* strrecvbuf, const int sockfd)
     // 查询T_USERINFO表，判断用户名和密码是否存在
     sqlstatement stmt;
     stmt.connect(conn);
-    stmt.prepare("select count(*) from T_USRINFO where username=:1 and passwd=:2 and rsts=1");
+    stmt.prepare("select count(*) from T_USERINFO where username=:1 and passwd=:2 and rsts=1");
     stmt.bindin(1, username, 30);
     stmt.bindin(2, passwd, 30);
     
@@ -350,6 +361,119 @@ bool CheckPerm(connection* conn, const char* strrecvbuf, const int sockfd)
 
         return false;
     }
+
+    return true;
+}
+
+// 再执行接口的sql语句，把数据放回给客户端
+bool ExecSQL(connection* conn, const char* strrecvbuf, const int sockfd)
+{
+    // 从请求报文中解析接口名
+    char intername[31];
+    memset(intername, 0,sizeof(intername));
+    getvalue(strrecvbuf, "intername", intername, 30);       // 获取接口名
+
+    // 从接口参数配置表T_INTERCFG中加载接口参数
+    char selectsql[1001],colstr[301],bindin[301];
+    memset(selectsql, 0, sizeof(selectsql));        // 接口sql
+    memset(colstr, 0, sizeof(colstr));              // 输出列名
+    memset(bindin, 0, sizeof(bindin));              // 接口参数
+
+    sqlstatement stmt;
+    stmt.connect(conn);
+    stmt.prepare("select selectsql,colstr,bindin from T_INTERCFG where intername = :1");
+    stmt.bindin(1, intername, 30);              // 接口名
+    stmt.bindout(1, selectsql, 1000);           // 接口sql
+    stmt.bindout(2, colstr, 300);               // 输出列名
+    stmt.bindout(3, bindin, 300);                // 接口参数
+
+    stmt.execute();        // 这里基本上不用判断返回值，出错的几率几乎没有
+    stmt.next();
+
+    // 准备查询数据的SQL语句
+    stmt.prepare(selectsql);
+
+    // http://192.168.174.132:8080?username=ty&passwd=typwd&intername=getzhobtmind3&obtid=59287&begintime=20211024094318&endtime=20211024113920
+    // SQL语句：   select obtid,to_char(ddatetime,'yyyymmddhh24miss'),t,p,u,wd,wf,r,vis from T_ZHOBTMIND where obtid=:1 and ddatetime>=to_date(:2,'yyyymmddhh24miss') and ddatetime<=to_date(:3,'yyyymmddhh24miss')
+    // colstr字段：obtid,ddatetime,t,p,u,wd,wf,r,vis
+    // bindin字段：obtid,begintime,endtime
+
+    // 绑定查询数据的sql语句的输入变量
+    // 根据接口配置中的参数列表（bindin字段），从URL中解析出参数的值，绑定到查询数据的sql语句中
+    // --------------------------------------------------------------
+    // 拆分数据传输bindin
+    CCmdStr Cmdstr;
+    Cmdstr.SplitToCmd(bindin, ",");
+    // 声明一个用于存放输入参数的数组，输入参数的值不会太长，100足够
+    char invalue[Cmdstr.CmdCount()][101];
+    memset(invalue, 0, sizeof(invalue));
+    // 从http的GET请求报文中解析出输入参数，绑定到sql中
+    for(int i = 0; i<Cmdstr.CmdCount();i++)
+    {
+        getvalue(strrecvbuf, Cmdstr.m_vCmdStr[i].c_str(), invalue[i], 100);
+        stmt.bindin(i+1, invalue[i], 100);
+    }
+    // --------------------------------------------------------------
+
+    // 绑定存数据的sql语句的输出变量
+    // 根据接口配置中的列名（colstr字段），binout结果集
+    // --------------------------------------------------------------
+    // 拆分结果集的字段名colstr，得到结果集的字段数
+    Cmdstr.SplitToCmd(colstr, ",");
+    // 声明一个数组，用于存放结果集的数组
+    char colvalue[Cmdstr.CmdCount()][2001];
+    memset(colvalue, 0, sizeof(colvalue));
+    // 把结果集绑定到colvalue数组中
+    for(int i =0; i < Cmdstr.CmdCount(); i++)
+    {
+        stmt.bindout(i+1, colvalue[i], 2000);
+    }
+    // --------------------------------------------------------------
+
+    // 执行sql语句
+    char strsendbuffer[4001];           // 发送给客户端的xml
+    memset(strsendbuffer, 0, sizeof(strsendbuffer));
+    if(stmt.execute() !=0)
+    {
+        logfile.Write("stmt.execute() failed.\n%s\n%s\n", stmt.m_sql, stmt.m_cda.message);
+        sprintf(strsendbuffer, "<retcode>%d</retcode><message>%s</message>\n", stmt.m_cda.rc, stmt.m_cda.message);
+        Writen(sockfd, strsendbuffer, strlen(strsendbuffer));
+        return false;
+    }
+    strcpy(strsendbuffer, "<retcode>0</retcode><message>ok</message>\n");
+    Writen(sockfd, strsendbuffer, strlen(strsendbuffer));
+
+    // 向客户端发送xml内容的头部标签<data>
+    Writen(sockfd, "<data>\n", strlen("<data>\n"));
+
+    // 获取结果集，每获取一条记录，就拼接xml报文，发送给客户端
+    char strtemp[2001];                 // 用于拼接xml的临时变量
+    while (true)
+    {
+        memset(strsendbuffer, 0, sizeof(strsendbuffer));
+        memset(strtemp, 0, sizeof(strtemp));
+
+        if(stmt.next() != 0) break;     // 从结果集中获取一条记录
+
+        // 拼接每个字段的xml
+        for(int i = 0; i < Cmdstr.CmdCount(); i++)
+        {
+            memset(strtemp, 0, sizeof(strtemp));
+            snprintf(strtemp, 2000, "<%s>%s</%s>", Cmdstr.m_vCmdStr[i].c_str(), colvalue[i], Cmdstr.m_vCmdStr[i].c_str());
+            strcat(strsendbuffer, strtemp);
+        }
+
+        strcat(strsendbuffer, "<endl/>\n");         // xml每行的结束标志
+
+        Writen(sockfd, strsendbuffer, strlen(strsendbuffer));       // 向客户端返回这行数据
+    }
+    
+
+    // 向客户端发送xml内容的尾部标签</data>
+    Writen(sockfd, "</data>\n", strlen("</data>\n"));
+
+    // 写接口调用日志表T_USERLOG
+    logfile.Write("intername=%s, count=%d\n", intername, stmt.m_cda.rpc);
 
     return true;
 }
