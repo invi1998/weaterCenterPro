@@ -172,6 +172,9 @@ void EXIT(int sig)   // 线程退出函数
     pthread_spin_lock(&spin);
 	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
 	{
+        // 注意：特别注意，如果线程跑得太快，主线程可能还来不及把线程的id放入容器
+        // 线程清理函数可能没有来得及从容器职工删除自己的id
+        // 所以，一下代码可能会出现段错误
 		pthread_cancel(*iter);
 	}
     pthread_spin_unlock(&spin);
@@ -225,6 +228,9 @@ void* thmain(void *arg)		// 线程入口函数
                 "<retcode>-1</retcode><message>系统错误</message>");
 
         Writen(connfd, strsendbuf, strlen(strsendbuf));
+
+        usleep(100000);     // 防止线程太快退出
+
         pthread_exit(0);
     }
 
@@ -270,6 +276,10 @@ void thcleanup(void *arg)		// 线程清理函数
 	int conndfd = (int)(long)arg;
 
 	close(conndfd);
+
+    // 把本线程id从存放线程id的容器中删除
+    // 注意：特别注意，如果线程跑得太快，主程序可能来不及把线程id放入容器，
+    // 所以这里可能会出现找不到id的情况
 
     pthread_spin_lock(&spin);
 	// 把本线程的id从容器中删除
@@ -578,7 +588,7 @@ bool connpool::init(char* connstr, char* charset, int maxcount, int timeout)
     connection conn;
     if(conn.connecttodb(connstr, charset) != 0)
     {
-        printf("数据库连接失败。\n%s\n", conn.m_cda.message);
+        logfile.Write("数据库连接失败。\n%s\n", conn.m_cda.message);
         return false;
     }
 
