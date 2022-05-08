@@ -6,15 +6,6 @@
 #include "_public.h"
 #include "_ooci.h"
 
-#define MAXCONNS 10                 // 数据库连接池的大小
-connection conns[MAXCONNS];         // 数据库连接池数组
-pthread_mutex_t mutex[MAXCONNS];    // 数据库连接池的锁
-
-bool initconns();                   // 初始化数据库连接池
-connection *getconns();             // 从数据库连接池中获取一个空闲的连接
-bool freecons(connection* conn);    // 释放、归还 数据库连接
-bool destroyconns();                // 释放数据库连接占用的资源（断开数据库连接 并 销毁锁）
-
 CLogFile logfile;   // 服务程序运行日志对象
 CTcpServer TcpServer;   // tcp服务端类对象
 
@@ -59,6 +50,49 @@ bool CheckPerm(connection* conn, const char* strrecvbuf, const int sockfd);
 // 再执行接口的sql语句，把数据放回给客户端
 bool ExecSQL(connection* conn, const char* strrecvbuf, const int sockfd);
 
+// 检测数据库连接池状态的函数
+void* checkpool(void* args);
+
+// 数据库连接池类
+class connpool
+{
+private:
+    struct st_conn
+    {
+        connection conn;    // 数据库连接
+        pthread_mutex_t mutex;  // 数据库连接互斥锁
+        time_t atime;           // 数据库连接上次使用的时间，如果未连接则取值为0
+    }*m_conns;           // 数据库连接池
+
+    int m_maxconns;     // 数据库连接池的最大值
+    int m_timeout;      // 数据库连接的超时参数，单位：s
+    char m_connstr[101];    // 数据库连接参数，用户名。密码@连接名
+    char m_charset[101];    // 数据库字符集
+
+public:
+    connpool();
+    ~connpool();
+
+    // 初始化数据库连接池，初始化锁，如果数据库连接参数有问题，返回false
+    bool init( char* connstr, char* charset, int maxcount, int timeout);
+
+    // 断开数据库连接，销毁锁，释放数据库连接池的内存空间
+    void destroy();
+
+    // 从数据库连接池中获取一个空闲连接，成功放回数据库的连接地址
+    // 如果连接池已经用完或者连接数据库失败，返回空
+    connection *get();
+
+    // 归还数据库连接
+    bool free(connection *conn);
+
+    // 检测数据库连接池，断开空闲连接(在服务程序中，用一个专用的子线程调用此函数)
+    void checkpool();
+
+};
+
+connpool oracleconnpool;        // 声明连接池对象
+
 int main(int argc,char *argv[])
 {
 	if (argc!=3) { _help(argv); return -1; }
@@ -80,10 +114,20 @@ int main(int argc,char *argv[])
     }
 
     // 初始化数据库连接池
-    if(initconns() ==  false)
+    if(oracleconnpool.init(starg.connstr, starg.charset, 10, 50) ==  false)
     {
         logfile.Write("数据库连接池初始化失败\n");
         return -1;
+    }
+    else
+    {
+        // 创建一个线程，用来检测连接池状态
+        pthread_t thid;
+        if(pthread_create(&thid, NULL, checkpool, 0) != 0)
+        {
+            logfile.Write("线程创建失败\n");
+            return -1;
+        }
     }
 
 	pthread_spin_init(&spin, 0);		// 初始化锁
@@ -168,24 +212,37 @@ void* thmain(void *arg)		// 线程入口函数
     logfile.Write("%s\n", strrecvbuf);
 
     // 连接数据库
-    connection *conn = getconns();
+    connection *conn = oracleconnpool.get();
+
+    char strsendbuf[1024];
+    if(conn == nullptr)
+    {
+        memset(strsendbuf, 0, sizeof(strsendbuf));
+        sprintf(strsendbuf, \
+                "HTTP/1.1 200 OK\r\n"\
+                "Server:webserver\r\n"\
+                "Content-Type:text/html;charset=utf-8\r\n\r\n"\
+                "<retcode>-1</retcode><message>系统错误</message>");
+
+        Writen(connfd, strsendbuf, strlen(strsendbuf));
+        pthread_exit(0);
+    }
 
     // 判断URL中的用户名和密码，如果不正确，放回认证失败的响应报文。线程退出
     if(Login(conn, strrecvbuf, connfd) == false)
     {
-        freecons(conn);
+        oracleconnpool.free(conn);
         pthread_exit(0);
     }
 
     // 判断用户是否有调用接口的权限，如果没有，放回没有权限的响应报文，线程退出
     if(CheckPerm(conn, strrecvbuf, connfd) == false)
     {
-        freecons(conn);
+        oracleconnpool.free(conn);
         pthread_exit(0);
     }
 
     // 先把响应报文的头部发送给客户端
-    char strsendbuf[1024];
     memset(strsendbuf, 0, sizeof(strsendbuf));
     sprintf(strsendbuf, \
             "HTTP/1.1 200 OK\r\n"\
@@ -197,11 +254,11 @@ void* thmain(void *arg)		// 线程入口函数
     // 再执行接口的sql语句，把数据放回给客户端
     if(ExecSQL(conn, strrecvbuf, connfd) == false)
     {
-        freecons(conn);
+        oracleconnpool.free(conn);
         pthread_exit(0);
     }
 
-    freecons(conn);
+    oracleconnpool.free(conn);
 
 	pthread_cleanup_pop(1);
 
@@ -499,52 +556,126 @@ bool ExecSQL(connection* conn, const char* strrecvbuf, const int sockfd)
     return true;
 }
 
-bool initconns()                   // 初始化数据库连接池
+// -----------------------------------------------------------------------------------------------
+connpool::connpool()
 {
-    for(int i = 0; i<MAXCONNS; i++)
+    m_maxconns = 0;
+    m_timeout = 0;
+    memset(m_connstr, 0, sizeof(m_connstr));
+    memset(m_charset, 0, sizeof(m_charset));
+    m_conns = nullptr;
+}
+
+connpool::~connpool()
+{
+    destroy();
+}
+
+// 初始化数据库连接池，初始化锁，如果数据库连接参数有问题，返回false
+bool connpool::init(char* connstr, char* charset, int maxcount, int timeout)
+{
+    // 尝试数据库，验证数据库连接参数是否正确
+    connection conn;
+    if(conn.connecttodb(connstr, charset) != 0)
     {
-        // 连接数据库
-        if(conns[i].connecttodb(starg.connstr, starg.charset) != 0)
-        {
-            logfile.Write("connect to database(%s) failed\n%s\n", starg.connstr, conns[i].m_cda.message);
-            return false;
-        }
+        printf("数据库连接失败。\n%s\n", conn.m_cda.message);
+        return false;
+    }
 
-        // 初始化互斥锁
-        pthread_mutex_init(&mutex[i], 0);
+    conn.disconnect();
 
+    strncpy(m_connstr, connstr, 100);
+    strncpy(m_charset, charset, 100);
+    m_maxconns = maxcount;
+    m_timeout = timeout;
+
+    // 分配数据库连接池的内存空间
+    m_conns = new struct st_conn[m_maxconns];
+
+    for(int i = 0; i< m_maxconns; i++)
+    {
+        pthread_mutex_init(&m_conns[i].mutex, 0);       // 初始化锁
+        m_conns[i].atime = 0;                   // 数据库连接上次使用的时间初始化为0
     }
 
     return true;
 }
 
-connection *getconns()             // 从数据库连接池中获取一个空闲的连接
+// 断开数据库连接，销毁锁，释放数据库连接池的内存空间
+void connpool::destroy()
 {
-    // 采用轮询的方法，对互斥锁进行加锁，如果加锁成功，就返回这把锁对应的数据库连接
-    while (true)
+    for(int i = 0; i < m_maxconns; i++)
     {
-        for(int i = 0; i<MAXCONNS; i++)
-        {
-            if(pthread_mutex_lock(&mutex[i]) == 0)
-            {
-                logfile.Write("get conns is %d.\n", i);
-                return &conns[i];
-            }
-        }
-        usleep(10000);      // 百分之1s之后再重试
+        m_conns[i].conn.disconnect();       // 断开数据库连接
+        pthread_mutex_destroy(&m_conns[i].mutex);       // 销毁锁
     }
-    
+    delete []m_conns;
+    m_conns = nullptr;
+
+    memset(m_connstr, 0, sizeof(m_connstr));
+    memset(m_charset, 0, sizeof(m_charset));
+
+    m_maxconns = 0;
+    m_timeout = 0;
 }
 
-bool freecons(connection* conn)    // 释放、归还 数据库连接
+// 从数据库连接池中获取一个空闲连接，成功放回数据库的连接地址
+// 如果连接池已经用完或者连接数据库失败，返回空
+// 1）从数据库连接池中寻找一个空闲的，已经连接好的connection，如果找到了，返回他的地址
+// 2）如果没有找到，在连接池中找一个未连接数据库的connection，连接数据库，如果成功，返回connection的地址
+// 3）如果第2）步找到了未连接数据库的connection，但是连接数据库失败，返回false
+// 4）如果第2）步没有找到未连接数据库的connection，表示数据库连接池已经用完，也返回空
+connection *connpool::get()
 {
-    for(int i = 0; i<MAXCONNS; i++)
+    int pos = -1;           // 用于记录第一个未连接数据库的数组位置
+
+    for(int i = 0; i < m_maxconns; i++)
     {
-        if(&conns[i] == conn)
+        if(pthread_mutex_trylock(&m_conns[i].mutex) == 0)
         {
-            pthread_mutex_unlock(&mutex[i]);
-            conn = nullptr;
-            logfile.Write("get conns is %d.\n", i);
+            if(m_conns[i].atime > 0)        // 如果数据库是已经连接状态
+            {
+                m_conns[i].atime = time(0);     // 把数据库连接的使用时间置为当前时间
+                return &m_conns[i].conn;        // 返回数据库连接的地址
+            }
+
+
+            if(pos == -1)
+            {
+                pos = i;        // 记录第一个未连接数据库的数组位置
+            }
+            else
+            {
+                pthread_mutex_unlock(&m_conns[i].mutex);        // 如果不是已连接状态，需要释放锁
+            }
+        }
+    }
+
+    if(pos == -1)       // 表示连接池已经用完，返回空
+    {
+        return nullptr;
+    }
+
+    // 连接池没有用完，让m_conns[pos].conn连上数据库
+    if(m_conns[pos].conn.connecttodb(m_connstr, m_charset) != 0)
+    {
+        pthread_mutex_unlock(&m_conns[pos].mutex);
+        return nullptr;
+    }
+    m_conns[pos].atime = time(0);           // 把数据库连接的使用时间置为当前时间
+    return &m_conns[pos].conn;
+
+}
+
+// 归还数据库连接
+bool connpool::free(connection *conn)
+{
+    for(int i = 0; i < m_maxconns; i++)
+    {
+        if(&m_conns[i].conn == conn)
+        {
+            m_conns[i].atime = time(0);
+            pthread_mutex_unlock(&m_conns[i].mutex);
             return true;
         }
     }
@@ -552,13 +683,50 @@ bool freecons(connection* conn)    // 释放、归还 数据库连接
     return false;
 }
 
-bool destroyconns()                // 释放数据库连接占用的资源（断开数据库连接 并 销毁锁）
+// 检测数据库连接池，断开空闲连接(在服务程序中，用一个专用的子线程调用此函数)
+void connpool::checkpool()
 {
-    for(int i = 0; i<MAXCONNS; i++)
+    for(int i = 0; i < m_maxconns; i++)
     {
-        conns[i].disconnect();      // 断开数据库连接
-        pthread_mutex_destroy(&mutex[i]);       // 销毁互斥锁
+        if(pthread_mutex_trylock(&m_conns[i].mutex) == 0)
+        {
+            if(m_conns[i].atime > 0)        // 如果数据库是已经连接状态
+            {
+                // 判断连接是否超时
+                if(time(0) - m_conns[i].atime > m_timeout)
+                {
+                    m_conns[i].conn.disconnect();       // 断开数据库连接
+                    m_conns[i].atime = 0;               // 重置数据库连接的使用时间
+                }
+                else
+                {
+                    // 如果连接没有超时，执行一次sql，验证连接是否有效，如果无效，断开它
+                    // 如果网络断开了，或者数据库重启了，就需要重新连接数据库，在这里只需要断开连接就可以
+                    // 重连工作交给get()函数
+                    if(m_conns[i].conn.execute("select * from dual") != 0)
+                    {
+                        m_conns[i].conn.disconnect();       // 断开数据库连接
+                        m_conns[i].atime = 0;               // 重置连接使用时间
+                    }
+                }
+            }
+
+            pthread_mutex_unlock(&m_conns[i].mutex);        // 释放锁
+        }
+
+        // 如果尝试加锁失败，表示数据库连接正在使用中，不必检测
     }
 
-    return true;
+}
+
+// 检测数据库连接池状态的函数
+void* checkpool(void* args)
+{
+    while (true)
+    {
+        /* code */
+        oracleconnpool.checkpool();
+        sleep(30);
+    }
+    return NULL;
 }
