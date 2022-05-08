@@ -6,6 +6,15 @@
 #include "_public.h"
 #include "_ooci.h"
 
+#define MAXCONNS 10                 // 数据库连接池的大小
+connection conns[MAXCONNS];         // 数据库连接池数组
+pthread_mutex_t mutex[MAXCONNS];    // 数据库连接池的锁
+
+bool initconns();                   // 初始化数据库连接池
+connection *getconns();             // 从数据库连接池中获取一个空闲的连接
+bool freecons(connection* conn);    // 释放、归还 数据库连接
+bool destroyconns();                // 释放数据库连接占用的资源（断开数据库连接 并 销毁锁）
+
 CLogFile logfile;   // 服务程序运行日志对象
 CTcpServer TcpServer;   // tcp服务端类对象
 
@@ -68,6 +77,13 @@ int main(int argc,char *argv[])
     if (TcpServer.InitServer(starg.port)==false)
     {
         logfile.Write("TcpServer.InitServer(%d) failed.\n",starg.port); return -1;
+    }
+
+    // 初始化数据库连接池
+    if(initconns() ==  false)
+    {
+        logfile.Write("数据库连接池初始化失败\n");
+        return -1;
     }
 
 	pthread_spin_init(&spin, 0);		// 初始化锁
@@ -152,22 +168,21 @@ void* thmain(void *arg)		// 线程入口函数
     logfile.Write("%s\n", strrecvbuf);
 
     // 连接数据库
-    connection conn;
-
-    if(conn.connecttodb(starg.connstr, starg.charset) != 0)
-    {
-        logfile.Write("connec database(%s) failed\n%s\n", starg.connstr, conn.m_cda.message);
-        pthread_exit(0);
-    }
+    connection *conn = getconns();
 
     // 判断URL中的用户名和密码，如果不正确，放回认证失败的响应报文。线程退出
-    if(Login(&conn, strrecvbuf, connfd) == false)
+    if(Login(conn, strrecvbuf, connfd) == false)
     {
+        freecons(conn);
         pthread_exit(0);
     }
 
     // 判断用户是否有调用接口的权限，如果没有，放回没有权限的响应报文，线程退出
-    if(CheckPerm(&conn, strrecvbuf, connfd) == false) pthread_exit(0);
+    if(CheckPerm(conn, strrecvbuf, connfd) == false)
+    {
+        freecons(conn);
+        pthread_exit(0);
+    }
 
     // 先把响应报文的头部发送给客户端
     char strsendbuf[1024];
@@ -180,7 +195,13 @@ void* thmain(void *arg)		// 线程入口函数
     Writen(connfd, strsendbuf, strlen(strsendbuf));
 
     // 再执行接口的sql语句，把数据放回给客户端
-    if(ExecSQL(&conn, strrecvbuf, connfd) == false) pthread_exit(0);
+    if(ExecSQL(conn, strrecvbuf, connfd) == false)
+    {
+        freecons(conn);
+        pthread_exit(0);
+    }
+
+    freecons(conn);
 
 	pthread_cleanup_pop(1);
 
@@ -474,6 +495,70 @@ bool ExecSQL(connection* conn, const char* strrecvbuf, const int sockfd)
 
     // 写接口调用日志表T_USERLOG
     logfile.Write("intername=%s, count=%d\n", intername, stmt.m_cda.rpc);
+
+    return true;
+}
+
+bool initconns()                   // 初始化数据库连接池
+{
+    for(int i = 0; i<MAXCONNS; i++)
+    {
+        // 连接数据库
+        if(conns[i].connecttodb(starg.connstr, starg.charset) != 0)
+        {
+            logfile.Write("connect to database(%s) failed\n%s\n", starg.connstr, conns[i].m_cda.message);
+            return false;
+        }
+
+        // 初始化互斥锁
+        pthread_mutex_init(&mutex[i], 0);
+
+    }
+
+    return true;
+}
+
+connection *getconns()             // 从数据库连接池中获取一个空闲的连接
+{
+    // 采用轮询的方法，对互斥锁进行加锁，如果加锁成功，就返回这把锁对应的数据库连接
+    while (true)
+    {
+        for(int i = 0; i<MAXCONNS; i++)
+        {
+            if(pthread_mutex_lock(&mutex[i]) == 0)
+            {
+                logfile.Write("get conns is %d.\n", i);
+                return &conns[i];
+            }
+        }
+        usleep(10000);      // 百分之1s之后再重试
+    }
+    
+}
+
+bool freecons(connection* conn)    // 释放、归还 数据库连接
+{
+    for(int i = 0; i<MAXCONNS; i++)
+    {
+        if(&conns[i] == conn)
+        {
+            pthread_mutex_unlock(&mutex[i]);
+            conn = nullptr;
+            logfile.Write("get conns is %d.\n", i);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool destroyconns()                // 释放数据库连接占用的资源（断开数据库连接 并 销毁锁）
+{
+    for(int i = 0; i<MAXCONNS; i++)
+    {
+        conns[i].disconnect();      // 断开数据库连接
+        pthread_mutex_destroy(&mutex[i]);       // 销毁互斥锁
+    }
 
     return true;
 }
