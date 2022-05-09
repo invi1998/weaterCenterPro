@@ -16,6 +16,17 @@ struct st_arg
     int port;               // web服务监听端口
 } starg;
 
+// 线程信息结构体
+struct st_pthinfo
+{
+    pthread_t pthid;            // 线程编号
+    time_t  atime;              // 最近一次心跳时间
+};
+
+// 守护线程的线程id
+pthread_t checkthid;
+// 数据库连接池的监控线程id
+pthread_t conndthid;
 
 void EXIT(int sig);   // 线程退出函数
 
@@ -30,7 +41,7 @@ pthread_cond_t cond = PTHREAD_COND_INITIALIZER;         // 定义并初始化条
 vector<int> sockqueue;          // 客户端socket队列
 
 // 存放线程id
-vector<pthread_t> vpid;
+vector<st_pthinfo> vthread;
 
 // 读取客户端的报文
 int ReadT(const int sockfd, char* buffer, const int size, const int itimeout);
@@ -56,6 +67,9 @@ bool ExecSQL(connection* conn, const char* strrecvbuf, const int sockfd);
 
 // 检测数据库连接池状态的函数
 void* checkpool(void* args);
+
+// 守护线程（监控线程）主函数
+void* checkthmain(void *arg);
 
 // 数据库连接池类
 class connpool
@@ -125,26 +139,35 @@ int main(int argc,char *argv[])
     }
     else
     {
-        // 创建一个线程，用来检测连接池状态
-        pthread_t thid;
-        if(pthread_create(&thid, NULL, checkpool, 0) != 0)
+        // 创建一个线程，用来检测数据库连接池状态
+        if(pthread_create(&conndthid, NULL, checkpool, 0) != 0)
         {
             logfile.Write("线程创建失败\n");
             return -1;
         }
     }
 
+    // 创建守护线程
+    if(pthread_create(&checkthid, NULL, checkthmain, 0) != 0)
+    {
+        logfile.Write("线程创建失败\n");
+        return -1;
+    }
+
     // 创建10个工作线程，线程数比CPU核数略多
     for(int i = 10; i < 10; i++)
     {
         pthread_t thid = 0;
-		if(pthread_create(&thid, NULL, thmain, (void*)(long)i) != 0)
+        st_pthinfo thinfo;
+		if(pthread_create(&thinfo.pthid, NULL, thmain, (void*)(long)i) != 0)
 		{
 			logfile.Write("线程创建失败\n");
 			return -1;
 		}
 
-        vpid.push_back(thid);       // 把线程ID保存到容器中
+        thinfo.atime = time(0);         // 设置线程心跳时间为当前时间
+
+        vthread.push_back(thinfo);       // 把线程ID保存到容器中
     }
 
 	pthread_spin_init(&spin, 0);		// 初始化锁
@@ -182,14 +205,16 @@ void EXIT(int sig)   // 线程退出函数
 
 	// 取消全部的线程
     pthread_spin_lock(&spin);
-	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
+	for(auto iter = vthread.begin(); iter != vthread.end(); ++iter)
 	{
-        // 注意：特别注意，如果线程跑得太快，主线程可能还来不及把线程的id放入容器
-		pthread_cancel(*iter);
+		pthread_cancel((*iter).pthid);
 	}
     pthread_spin_unlock(&spin);
 
 	sleep(1);		// 休息1s。保证线程清理函数能够被调用
+
+    pthread_cancel(checkthid);      // 取消监控线程
+    pthread_cancel(conndthid);      // 取消数据库连接池的监控线程
 
 	// 销毁锁，销毁条件变量
 	pthread_spin_destroy(&spin);
@@ -220,7 +245,14 @@ void* thmain(void *arg)		// 线程入口函数
         // 如果客户端socket队列为空，那就等待，用while防止条件变量虚假唤醒
         while (sockqueue.size() == 0)
         {
-            pthread_cond_wait(&cond, &mutex);
+            struct timeval now;
+            gettimeofday(&now, NULL);       // 获取当前时间
+            now.tv_sec =  now.tv_sec+20;    // 把当前时间加20s
+            pthread_cond_timedwait(&cond, &mutex, (timespec*)&now);
+
+            // 上述这些代码表示，如果条件变量在20s之内没有被触发，那么就会超时返回，就会走到下面这里，就不会继续卡住，
+            // 那么我们就再下面更新一下该线程的心跳信息
+            vthread[pthnum].atime = time(0);
         }
 
         // 从客户端socket队列中取第一条记录，然后删除该记录
@@ -323,11 +355,11 @@ void thcleanup(void *arg)		// 线程清理函数
 
     pthread_spin_lock(&spin);
 	// 把本线程的id从容器中删除
-	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
+	for(auto iter = vthread.begin(); iter != vthread.end(); ++iter)
 	{
-		if(pthread_equal(*iter, pthread_self()) == 0)
+		if(pthread_equal((*iter).pthid, pthread_self()) == 0)
 		{
-			vpid.erase(iter);
+			vthread.erase(iter);
 			break;
 		}
 	}
@@ -779,4 +811,37 @@ void* checkpool(void* args)
         sleep(30);
     }
     return NULL;
+}
+
+// 守护线程（监控线程）主函数
+void* checkthmain(void *arg)
+{
+    while (true)
+    {
+        // 遍历工作线程id的容器，检查每隔工作线程是否超时
+        for(auto iter = vthread.begin(); iter != vthread.end(); ++iter)
+        {
+            // 工作线程超时时间设置为20s，这里用25s做超时判断
+            if((time(0) - (*iter).atime) > 25)
+            {
+                // 线程心跳超时。写日志
+                logfile.Write("thread %d(%lu) timeout(%d)\n", distance(vthread.begin(), iter), (*iter).pthid, time(0) - (*iter).atime);
+                // 取消已经超时的工作线程
+                pthread_cancel((*iter).pthid);
+
+                // 然后再重新创建工作线程
+                if(pthread_create(&(*iter).pthid, NULL, thmain, (void*)(long)distance(vthread.begin(), iter)) != 0)
+                {
+                    logfile.Write("线程创建失败。进程退出\n");
+                    EXIT(-1);
+                }
+
+                // 设置工作线程的心跳时间
+                (*iter).atime = time(0);
+            }
+        }
+        
+        sleep(3);
+    }
+    
 }
