@@ -1,5 +1,5 @@
 all:demo01 demo02 demo03 demo04 demo05 demo06 demo07 demo08 demo10 demo11 demo12 demo13 demo14 demo20\
-	demo26 demo27 demo28 tcpselect client
+	demo26 demo27 demo28 tcpselect client tcppoll
 
 demo01:demo01.cpp
 	g++ -g -o demo01 demo01.cpp -lm -lc
@@ -58,6 +58,9 @@ tcpselect:tcpselect.cpp
 client:client.cpp
 	g++ -g -o client client.cpp -lm -lc
 
+tcppoll:tcppoll.cpp
+	g++ -g -o tcppoll tcppoll.cpp -lm -lc
+
 clean:
 	rm demo01 demo02 demo03 demo04 demo05 demo06 demo07 demo08 demo10 demo11 demo12 demo13 demo14 demo20\
-	demo26 demo27 demo28 tcpselect client
+	demo26 demo27 demo28 tcpselect client tcppoll
