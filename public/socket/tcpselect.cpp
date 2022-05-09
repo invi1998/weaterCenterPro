@@ -41,8 +41,12 @@ int main(int argc, char *argv[])
         // 可读事件  可写事件
         // select() 等待事件的发生(监视哪些socket发生了事件)。
 
+        struct timeval timeout;
+        timeout.tv_sec=10;          // 10s
+        timeout.tv_usec=0;          // 0微秒
+
         fd_set tmpfds = readfds;
-        int infds = select(maxfd+1, &tmpfds, NULL, NULL, NULL);     // 这里把socket集合的副本传给select
+        int infds = select(maxfd+1, &tmpfds, NULL, NULL, &timeout);     // 这里把socket集合的副本传给select
 
         // 返回失败
         if(infds < 0)
@@ -125,7 +129,7 @@ int main(int argc, char *argv[])
                     fd_set tmpfds;
                     FD_ZERO(&tmpfds);
                     FD_SET(eventfd, &tmpfds);
-                    if(select(eventfd+1, NULL, &tmpfds, NULL, NULL) < 0)
+                    if(select(eventfd+1, NULL, &tmpfds, NULL, NULL) <= 0)
                     {
                         perror("select（） failed");
                     }
