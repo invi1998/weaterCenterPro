@@ -24,6 +24,10 @@ void* thmain(void *arg);		// 线程入口函数
 void thcleanup(void *arg);		// 线程清理函数
 
 pthread_spinlock_t spin;		// 自旋锁（对线程id容器这个公共资源进行加锁）
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;      // 定义互斥锁并初始化，用于实现生产消费者模型（给客户端socket队列做锁）
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;         // 定义并初始化条件变量
+
+vector<int> sockqueue;          // 客户端socket队列
 
 // 存放线程id
 vector<pthread_t> vpid;
@@ -130,6 +134,19 @@ int main(int argc,char *argv[])
         }
     }
 
+    // 创建10个工作线程，线程数比CPU核数略多
+    for(int i = 10; i < 10; i++)
+    {
+        pthread_t thid = 0;
+		if(pthread_create(&thid, NULL, thmain, (void*)(long)i) != 0)
+		{
+			logfile.Write("线程创建失败\n");
+			return -1;
+		}
+
+        vpid.push_back(thid);       // 把线程ID保存到容器中
+    }
+
 	pthread_spin_init(&spin, 0);		// 初始化锁
 
 	while (1)
@@ -143,17 +160,12 @@ int main(int argc,char *argv[])
 
 		logfile.Write("客户端（%s）已连接。\n",TcpServer.GetIP());
 
-		// 创建一个新的线程，让他和客户端进行通讯
-		pthread_t thid = 0;
-		if(pthread_create(&thid, NULL, thmain, (void*)(long)TcpServer.m_connfd) != 0)
-		{
-			logfile.Write("线程创建失败\n");
-			TcpServer.CloseListen();
-			continue;
-		}
-		pthread_spin_lock(&spin);		// 加锁
-		vpid.push_back(thid);
-		pthread_spin_unlock(&spin);		// 解锁
+        // 把客户端的socket放入队列中，并发送条件信号
+        pthread_mutex_lock(&mutex);                     // 加锁
+        sockqueue.push_back(TcpServer.m_connfd);        // 把客户端的socket放入队列容器中
+        pthread_mutex_unlock(&mutex);                   // 解锁
+        pthread_cond_signal(&cond);                     // 触发条件，激活一个线程
+
 	}
 
 	return 0;
@@ -173,23 +185,24 @@ void EXIT(int sig)   // 线程退出函数
 	for(auto iter = vpid.begin(); iter != vpid.end(); ++iter)
 	{
         // 注意：特别注意，如果线程跑得太快，主线程可能还来不及把线程的id放入容器
-        // 线程清理函数可能没有来得及从容器职工删除自己的id
-        // 所以，一下代码可能会出现段错误
 		pthread_cancel(*iter);
 	}
     pthread_spin_unlock(&spin);
 
 	sleep(1);		// 休息1s。保证线程清理函数能够被调用
 
-	// 释放锁
+	// 销毁锁，销毁条件变量
 	pthread_spin_destroy(&spin);
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cond);
 
 	exit(0);
 }
 
 void* thmain(void *arg)		// 线程入口函数
 {
-	int connfd = (int)(long)arg;			// 客户端的socket
+	int pthnum = (int)(long)arg;			// 线程编号
+    int connfd;                             // 客户端的socket
 
 	pthread_cleanup_push(thcleanup, arg);		// 线程清理函数入栈
 
@@ -198,88 +211,115 @@ void* thmain(void *arg)		// 线程入口函数
 	pthread_detach(pthread_self());		// 然后将线程分离出去
 
     char strrecvbuf[1024];      // 接收报文的buffer
+    char strsendbuf[1024];      // 发送报文的buffer
 
-    // 读取客户端的报文，如果超时或者失败，线程退出
-    memset(strrecvbuf, 0, sizeof(strrecvbuf));
-    if(ReadT(connfd, strrecvbuf, sizeof(strrecvbuf), 3) <= 0)
+    while (true)
     {
-        pthread_exit(0);
-    }
+        pthread_mutex_lock(&mutex);         // 给客户端socket队列加锁
 
-    // 如果不是GET请求，报文不进行处理，线程退出
-    if(strncmp(strrecvbuf, "GET", 3) != 0)
-    {
-        pthread_exit(0);
-    }
+        // 如果客户端socket队列为空，那就等待，用while防止条件变量虚假唤醒
+        while (sockqueue.size() == 0)
+        {
+            pthread_cond_wait(&cond, &mutex);
+        }
 
-    logfile.Write("%s\n", strrecvbuf);
+        // 从客户端socket队列中取第一条记录，然后删除该记录
+        connfd = sockqueue[0];
+        sockqueue.erase(sockqueue.begin());
 
-    // 连接数据库
-    connection *conn = oracleconnpool.get();
+        pthread_mutex_unlock(&mutex);           // 给客户端socket队列解锁
 
-    char strsendbuf[1024];
-    if(conn == nullptr)
-    {
+        // 以下是业务处理代码
+
+        logfile.Write("pthid = %lu(num = %d), socketid = %d\n", pthread_self(), pthnum, connfd);
+
+        // 读取客户端的报文，如果超时或者失败，关闭客户端的socket，然后继续循环
+        if(ReadT(connfd, strrecvbuf, sizeof(strrecvbuf), 3) <= 0)
+        {
+            close(connfd);
+            continue;
+        }
+
+        // 如果不是GET请求，报文不进行处理，关闭客户端的socket，然后继续循环
+        memset(strrecvbuf, 0, sizeof(strrecvbuf));
+        if(strncmp(strrecvbuf, "GET", 3) != 0)
+        {
+            close(connfd);
+            continue;
+        }
+
+        logfile.Write("%s\n", strrecvbuf);
+
+        // 连接数据库
+        connection *conn = oracleconnpool.get();
+
+        // 如果数据库连接为空，向客户端返回系统错误，关闭这个socket，然后继续循环
+        if(conn == nullptr)
+        {
+            memset(strsendbuf, 0, sizeof(strsendbuf));
+            sprintf(strsendbuf, \
+                    "HTTP/1.1 200 OK\r\n"\
+                    "Server:webserver\r\n"\
+                    "Content-Type:text/html;charset=utf-8\r\n\r\n"\
+                    "<retcode>-1</retcode><message>系统错误</message>");
+
+            Writen(connfd, strsendbuf, strlen(strsendbuf));
+
+            close(connfd);
+            continue;
+        }
+
+        // 判断URL中的用户名和密码，如果不正确，放回认证失败的响应报文。关闭客户端的socket，然后继续循环
+        if(Login(conn, strrecvbuf, connfd) == false)
+        {
+            oracleconnpool.free(conn);
+            close(connfd);
+            continue;
+        }
+
+        // 判断用户是否有调用接口的权限，如果没有，放回没有权限的响应报文，关闭客户端的socket，然后继续循环
+        if(CheckPerm(conn, strrecvbuf, connfd) == false)
+        {
+            oracleconnpool.free(conn);
+            close(connfd);
+            continue;
+        }
+
+        // 先把响应报文的头部发送给客户端
         memset(strsendbuf, 0, sizeof(strsendbuf));
         sprintf(strsendbuf, \
                 "HTTP/1.1 200 OK\r\n"\
                 "Server:webserver\r\n"\
-                "Content-Type:text/html;charset=utf-8\r\n\r\n"\
-                "<retcode>-1</retcode><message>系统错误</message>");
+                "Content-Type:text/html;charset=utf-8\r\n\r\n");
 
         Writen(connfd, strsendbuf, strlen(strsendbuf));
 
-        usleep(100000);     // 防止线程太快退出
+        // 再执行接口的sql语句，把数据放回给客户端, 关闭客户端的socket，然后继续循环
+        if(ExecSQL(conn, strrecvbuf, connfd) == false)
+        {
+            oracleconnpool.free(conn);
+            close(connfd);
+            continue;
+        }
 
-        pthread_exit(0);
-    }
-
-    // 判断URL中的用户名和密码，如果不正确，放回认证失败的响应报文。线程退出
-    if(Login(conn, strrecvbuf, connfd) == false)
-    {
         oracleconnpool.free(conn);
-        pthread_exit(0);
+        
     }
 
-    // 判断用户是否有调用接口的权限，如果没有，放回没有权限的响应报文，线程退出
-    if(CheckPerm(conn, strrecvbuf, connfd) == false)
-    {
-        oracleconnpool.free(conn);
-        pthread_exit(0);
-    }
+    pthread_cleanup_pop(1);
 
-    // 先把响应报文的头部发送给客户端
-    memset(strsendbuf, 0, sizeof(strsendbuf));
-    sprintf(strsendbuf, \
-            "HTTP/1.1 200 OK\r\n"\
-            "Server:webserver\r\n"\
-            "Content-Type:text/html;charset=utf-8\r\n\r\n");
-
-    Writen(connfd, strsendbuf, strlen(strsendbuf));
-
-    // 再执行接口的sql语句，把数据放回给客户端
-    if(ExecSQL(conn, strrecvbuf, connfd) == false)
-    {
-        oracleconnpool.free(conn);
-        pthread_exit(0);
-    }
-
-    oracleconnpool.free(conn);
-
-	pthread_cleanup_pop(1);
-
-	return NULL;
+    return NULL;
+   
 }
 
 void thcleanup(void *arg)		// 线程清理函数
 {
 	int conndfd = (int)(long)arg;
 
-	close(conndfd);
+    // 在生产消费者模型的线程清理函数中，要解锁互斥量，不让线程退出不了
+    pthread_mutex_unlock(&mutex);
 
     // 把本线程id从存放线程id的容器中删除
-    // 注意：特别注意，如果线程跑得太快，主程序可能来不及把线程id放入容器，
-    // 所以这里可能会出现找不到id的情况
 
     pthread_spin_lock(&spin);
 	// 把本线程的id从容器中删除
@@ -293,7 +333,7 @@ void thcleanup(void *arg)		// 线程清理函数
 	}
 	pthread_spin_unlock(&spin);
 
-	logfile.Write("线程%lu退出\n", pthread_self());
+	logfile.Write("线程%d(%lu)退出\n", (int)(long)arg, pthread_self());
 }
 
 // 显示程序的帮助
