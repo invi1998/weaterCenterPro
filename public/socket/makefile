@@ -1,5 +1,5 @@
 all:demo01 demo02 demo03 demo04 demo05 demo06 demo07 demo08 demo10 demo11 demo12 demo13 demo14 demo20\
-	demo26 demo27 demo28
+	demo26 demo27 demo28 tcpselect client
 
 demo01:demo01.cpp
 	g++ -g -o demo01 demo01.cpp -lm -lc
@@ -52,7 +52,12 @@ demo27:demo27.cpp
 demo28:demo28.cpp
 	g++ -g -o demo28 demo28.cpp -I/project/public /project/public/_public.cpp -I/oracle/home/rdbms/public -I/project/public/db/oracle -L/oracle/home/lib -L. -lclntsh /project/public/db/oracle/_ooci.cpp -lpthread -lm -lc
 
+tcpselect:tcpselect.cpp
+	g++ -g -o tcpselect tcpselect.cpp -lm -lc
+
+client:client.cpp
+	g++ -g -o client client.cpp -lm -lc
 
 clean:
 	rm demo01 demo02 demo03 demo04 demo05 demo06 demo07 demo08 demo10 demo11 demo12 demo13 demo14 demo20\
-	demo26 demo27 demo28
+	demo26 demo27 demo28 tcpselect client
