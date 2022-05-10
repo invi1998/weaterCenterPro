@@ -5,8 +5,9 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
+ 
 
-# Make data base, printed on Mon May  9 19:16:01 2022
+# Make data base, printed on Tue May 10 12:22:08 2022
 
 # Variables
 
@@ -31,6 +32,9 @@ VSCODE_LOG_NATIVE = false
 # default
 MAKE_VERSION := 3.82
 # makefile
+ 
+make: *** No rule to make target `all'.  Stop.
+
 CURDIR := /project
 # makefile
 SHELL = /bin/sh
@@ -55,7 +59,7 @@ LESSOPEN = ||/usr/bin/lesspipe.sh %s
 # environment
 VSCODE_CWD = /home/invi
 # environment
-SSH_CONNECTION = 192.168.31.186 56692 192.168.31.133 22
+SSH_CONNECTION = 192.168.31.186 62813 192.168.31.133 22
 # environment
 PATH = /home/invi/.vscode-server/bin/57fd6d0195bb9b9d1b49f6da5db789060795de47/bin/remote-cli:/opt/rh/devtoolset-8/root/usr/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/invi/.local/bin:/home/invi/bin:/usr/local/git:/home/invi/.local/bin:/home/invi/bin:/home/invi/bin:/oracle/home/bin:.
 # environment
@@ -71,7 +75,7 @@ VSCODE_PIPE_LOGGING = true
 # environment
 PWD = /project
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-f8040adb-bb20-4116-af1f-1174ef1ddff1.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-e3cfb8a3-1aab-4725-887e-830e3ab60998.sock
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
@@ -131,7 +135,7 @@ MAKEFLAGS = Rrqp
 # environment
 MFLAGS = -Rrqp
 # environment
-SSH_CLIENT = 192.168.31.186 56692 22
+SSH_CLIENT = 192.168.31.186 62813 22
 # environment
 MAIL = /var/spool/mail/invi
 # automatic
@@ -163,6 +167,7 @@ LANG = C
 # environment
 VSCODE_EXTHOST_WILL_SEND_SOCKET = true
 # variable set hash-table stats:
+ 
 # Load=76/1024=7%, Rehash=0, Collisions=8/95=8%
 
 # Pattern-specific Variable Values
@@ -236,8 +241,6 @@ GNUmakefile:
 
 # strcache hash-table stats:
 # Load=17/8192=0%, Rehash=0, Collisions=1/20=5%
-# Finished Make data base on Mon May  9 19:16:01 2022
+# Finished Make data base on Tue May 10 12:22:08 2022
 
  
-make: *** No rule to make target `all'.  Stop.
-

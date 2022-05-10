@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
     if(argc != 2)
     {
-        printf("usage: ./tcpselect port\n");
+        printf("usage: ./tcpepoll port\n");
         return -1;
     }
 
@@ -33,51 +33,49 @@ int main(int argc, char *argv[])
     int epollfd = epoll_create(1);
 
     // 为监听socket准备可读事件
-    epoll_ctl(epollfd, )
-   
+    epoll_event ev;             // 声明事件的数据结构
+    ev.events = EPOLLIN;        // 对结构体的events成员赋值，表示关心读事件
+    ev.data.fd = listensock;    // 对结构体的用户数据成员data的fd成员赋值，指定事件的自定义数据，会随着epoll_wait()返回的事件一并返回
 
+    // 事件准备好后，把它加入到epoll的句柄中
+    // 第一个参数：epoll句柄
+    // 第二个参数：ctl的动作，这里是添加事件，用EPOLL_CTL_ADD
+    // 第三个参数：epoll监听的socket，这里是给监听socket添加epoll，所以填listensock
+    // 第四个参数：epoll事件的地址
+    epoll_ctl(epollfd, EPOLL_CTL_ADD, listensock, &ev);
+
+    struct epoll_event evs[10];     // 声明一个用于存放epoll返回事件的数组
+   
     while (true)
     {
-        // 事件：1)新客户端的连接请求accept；2)客户端有报文到达recv，可以读；3)客户端连接已断开；
-        //       4)可以向客户端发送报文send，可以写。
-        // 可读事件  可写事件
-        // select() 等待事件的发生(监视哪些socket发生了事件)。
-
-        struct timeval timeout;
-        timeout.tv_sec=10;          // 10s
-        timeout.tv_usec=0;          // 0微秒
-
-        fd_set tmpfds = readfds;
-        int infds = select(maxfd+1, &tmpfds, NULL, NULL, &timeout);     // 这里把socket集合的副本传给select
+        // 在循环中调用epoll_wait监视sock事件发生
+        int infds = epoll_wait(epollfd, evs, 10, -1);
 
         // 返回失败
         if(infds < 0)
         {
-            perror("select() failed\n");
+            perror("epoll() failed\n");
             break;
         }
 
-        // 超时，在本程序中，select函数最后一个参数为空，不存在超时的情况，单已下代码还是留着‘
+        // 超时，在本程序中，epoll_wait函数最后一个参数-1，不存在超时的情况，但已下代码还是留着‘
         if(infds == 0)
         {
-            printf("select timeout\n");
+            printf("epoll timeout\n");
             continue;
         }
 
         // 如果infds > 0.表示有事件发生的socket的数量
-        for(int eventfd = 0; eventfd <= maxfd; eventfd++)
+        // 遍历epoll返回的已经发生事件的数组evs
+        for(int i = 0; i < infds; i++)
         {
-            // 使用FD_ISSET来检测socket集合中是否有事件
-            if(FD_ISSET(eventfd, &tmpfds) <= 0)
-            {
-                continue;       // 没有事件，继续循环
-            }
-
-            // 接下来就是表示找到了发生事件的socket
+            // 注意，先前我们已经将事件的socket通过用户数据成员传递进epoll，那么在这里事件发生的时候，我们就可以通过事件将这个socket带回来
+            // 也就是说，我们可以通过这个事件知道是哪个socket发生了事件
+            printf("events=%d, data.fd=%d,\n", evs[i].events, evs[i].data.fd);
 
             // 如果发生的事件是listensock。表示有新的客户端连接上来
             // 监听socket只会用于监听客户端的连接请求，不会接收客户端的数据通信报文
-            if(eventfd == listensock)
+            if(evs[i].data.fd == listensock)
             {
                 struct sockaddr_in client;
                 socklen_t len = sizeof(client);
@@ -90,12 +88,11 @@ int main(int argc, char *argv[])
 
                 printf("accept client(socket=%d) ok\n", clientsock);
 
-                // 然后把新客户端的socket加入可读socket的集合
-                FD_SET(clientsock, &readfds);
-                if(maxfd < clientsock) 
-                {
-                    maxfd = clientsock;     // 更新maxfd的值
-                }
+                // 为客户端准备可读事件，并添加到epoll中
+                ev.data.fd = clientsock;
+                ev.events = EPOLLIN;        // 可读事件
+                epoll_ctl(epollfd, EPOLL_CTL_ADD, clientsock, &ev);
+
             }
             else
             {
@@ -103,42 +100,20 @@ int main(int argc, char *argv[])
                 char buffer[1024];      // 存放从客户端读取的数据
                 memset(buffer, 0, sizeof(buffer));
 
-                if(recv(eventfd, buffer, sizeof(buffer), 0) <= 0)
+                if(recv(evs[i].data.fd, buffer, sizeof(buffer), 0) <= 0)
                 {
                     // 客户端连接已经断开
-                    printf("client(enventfd = %d) disconnected\n", eventfd);
-                    close(eventfd);
-                    // 然后用这个宏把已经关闭的socket从socket集合中删除
-                    FD_CLR(eventfd, &readfds);
-                    // 从集合中删除一个socket之后，要重新计算maxfd的值
-                    if(maxfd == eventfd)
-                    {
-                        for(int i = maxfd; i > 0; i--)      // 从后往前找
-                        {
-                            if(FD_ISSET(i, &readfds))
-                            {
-                                maxfd = i;
-                                break;
-                            }
-                        }
-                    }
+                    printf("client(enventfd = %d) disconnected\n", evs[i].data.fd);
+                    close(evs[i].data.fd);
+                    // 然后把已经关闭的socket从epoll中删除
+                    // 注意，这里已经关闭的socket不需要调用epoll_ctl函数把这个socket从epoll中删除，系统会自动处理已经关闭的socket
                 }
                 else
                 {
                     // 客户端有报文发送过来
-                    printf("recv(eventfd=%d):%s\n", eventfd, buffer);
+                    printf("recv(eventfd=%d):%s\n", evs[i].data.fd, buffer);
                     // 这里把接收到的报文原封不动的发回去
-                    fd_set tmpfds;
-                    FD_ZERO(&tmpfds);
-                    FD_SET(eventfd, &tmpfds);
-                    if(select(eventfd+1, NULL, &tmpfds, NULL, NULL) <= 0)
-                    {
-                        perror("select（） failed");
-                    }
-                    else
-                    {
-                        send(eventfd, buffer, strlen(buffer), 0);
-                    }
+                    send(evs[i].data.fd, buffer, strlen(buffer), 0);
                 }
             }
         }
