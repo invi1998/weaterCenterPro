@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
         {
             // 注意，先前我们已经将事件的socket通过用户数据成员传递进epoll，那么在这里事件发生的时候，我们就可以通过事件将这个socket带回来
             // 也就是说，我们可以通过这个事件知道是哪个socket发生了事件
-            logfile.Write("events=%d, data.fd=%d,\n", evs[i].events, evs[i].data.fd);
+            // logfile.Write("events=%d, data.fd=%d,\n", evs[i].events, evs[i].data.fd);
 
             auto iter = vroute.begin();
             for(; iter != vroute.end(); ++iter)
