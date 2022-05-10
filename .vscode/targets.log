@@ -5,9 +5,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Tue May 10 12:22:08 2022
+# Make data base, printed on Tue May 10 14:44:25 2022
 
 # Variables
 
@@ -32,9 +31,6 @@ VSCODE_LOG_NATIVE = false
 # default
 MAKE_VERSION := 3.82
 # makefile
- 
-make: *** No rule to make target `all'.  Stop.
-
 CURDIR := /project
 # makefile
 SHELL = /bin/sh
@@ -167,7 +163,6 @@ LANG = C
 # environment
 VSCODE_EXTHOST_WILL_SEND_SOCKET = true
 # variable set hash-table stats:
- 
 # Load=76/1024=7%, Rehash=0, Collisions=8/95=8%
 
 # Pattern-specific Variable Values
@@ -241,6 +236,8 @@ GNUmakefile:
 
 # strcache hash-table stats:
 # Load=17/8192=0%, Rehash=0, Collisions=1/20=5%
-# Finished Make data base on Tue May 10 12:22:08 2022
+# Finished Make data base on Tue May 10 14:44:25 2022
 
  
+make: *** No rule to make target `all'.  Stop.
+
