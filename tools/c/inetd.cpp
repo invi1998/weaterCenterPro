@@ -30,6 +30,10 @@ int clientatime[MAXSOCK];                   // 存放每个socket连接最后一
 // 这个数组有什么用呢？我们可以用它来判断socket是否连接空闲
 
 CLogFile logfile;
+CPActive PActive;
+
+int epollfd;
+int timefd;
 
 bool loadrout(const char* inifile);     // 把代理路由参数加载到vroute容器
 
@@ -64,6 +68,8 @@ int main(int argc, char *argv[])
     CloseIOAndSignal(); signal(SIGINT,EXIT);
     signal(SIGTERM,EXIT);
 
+    PActive.AddPInfo(30, "inetd");      // 进程心跳的时间，比闹钟时间要长一点
+
     // 把代理路由参数加载到vroute容器中
     if(loadrout(argv[2]) == false)
     { 
@@ -87,7 +93,7 @@ int main(int argc, char *argv[])
     }
 
     // 创建epoll句柄
-    int epollfd = epoll_create(1); 
+    epollfd = epoll_create(1); 
 
     // 为监听socket准备可读事件
     epoll_event ev;             // 声明事件的数据结构
@@ -103,6 +109,21 @@ int main(int argc, char *argv[])
         // 第四个参数：epoll事件的地址
         epoll_ctl(epollfd, EPOLL_CTL_ADD, (*iter).listensock, &ev);
     }
+
+    // 创建一个定时器
+    timefd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);       // 创建timerfd
+
+    // 设置定时器的超时时间
+    struct itimerspec timeout;
+    memset(&timeout, 0, sizeof(struct itimerspec));
+    timeout.it_value.tv_sec = 20;       // 超时时间设置为20s
+    timeout.it_value.tv_nsec = 0;
+    timerfd_settime(timefd, 0, &timeout, NULL);         // 设置定时器
+
+    // 为定时器准备可读事件
+    ev.events = EPOLLIN|EPOLLET;            // 读事件，注意，一定要用ET，模式
+    ev.data.fd = timefd;
+    epoll_ctl(epollfd, EPOLL_CTL_ADD, timefd, &ev);
 
     struct epoll_event evs[10];     // 声明一个用于存放epoll返回事件的数组
    
@@ -132,6 +153,31 @@ int main(int argc, char *argv[])
             // 注意，先前我们已经将事件的socket通过用户数据成员传递进epoll，那么在这里事件发生的时候，我们就可以通过事件将这个socket带回来
             // 也就是说，我们可以通过这个事件知道是哪个socket发生了事件
             // logfile.Write("events=%d, data.fd=%d,\n", evs[i].events, evs[i].data.fd);
+
+            // ////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // 如果定时器的时间已到，设置进程心跳，清理空闲的客户端socket
+            if(evs[i].data.fd == timefd)
+            {
+                timerfd_settime(timefd, 0, &timeout, NULL);         // 从新设置定时器（闹钟只提醒一次，如果不设置，响完这次后，再超时就不会提醒了）
+
+                PActive.UptATime();     // 设置进程心跳
+
+                // 遍历客户端连接的数组，把超时没动作的socket给关闭
+                for(int jj = 0; jj < MAXSOCK; jj++)
+                {
+                    // 如果客户端socket的空闲时间超过80s,就关闭它
+                    if((clientsockets[jj] > 0) && (time(0) - clientatime[jj] > 80))
+                    {
+                        logfile.Write("client(%d, %d) timeout \n", clientsockets[jj], clientsockets[clientsockets[jj]]);
+                        close(clientsockets[jj]);
+                        close(clientsockets[clientsockets[jj]]);
+                        clientsockets[clientsockets[jj]] = 0;   // 然后将记录对端的socket的数组里这两个位置的值置0
+                        clientsockets[jj] = 0;                  // 然后将记录对端的socket的数组里这两个位置的值置0
+                    }
+                }
+
+                continue;
+            }
 
             auto iter = vroute.begin();
             for(; iter != vroute.end(); ++iter)
@@ -230,6 +276,10 @@ int main(int argc, char *argv[])
             // 这里把接收到的报文原封不动的发给对端
             send(clientsockets[evs[i].data.fd], buffer, buflen, 0);         // 注意这里填对端的socket
             // 还有这里报文长度填buflen，不要用 strlen(buffer)，因为报文内容可能不是字符串
+
+            // 更新客户端连接的使用时间
+            clientatime[evs[i].data.fd] = time(0);
+            clientatime[clientsockets[evs[i].data.fd]] = time(0);
         }
     }
     
@@ -341,9 +391,9 @@ void EXIT(int sig)
         }
     }
 
-    // close(epollfd);   // 关闭epoll。
+    close(epollfd);   // 关闭epoll。
 
-    // close(tfd);       // 关闭定时器。
+    close(timefd);       // 关闭定时器。
 
     exit(0);
 }
