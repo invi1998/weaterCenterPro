@@ -30,8 +30,8 @@ int main(int argc, char *argv[])
     {
         printf("\n");
         printf("Using :./rinetdin logfile ip port\n\n");
-        printf("Sample:./rinetdin /tmp/rinetdin.log 192.168.174.132 4000\n\n");
-        printf("        /project/tools/bin/procctl 5 /project/tools/bin/rinetdin /tmp/rinetdin.log 192.168.174.132 4000\n\n");
+        printf("Sample:./rinetdin /tmp/rinetdin.log 192.168.31.133 4000\n\n");
+        printf("        /project/tools/bin/procctl 5 /project/tools/bin/rinetdin /tmp/rinetdin.log 192.168.31.133 4000\n\n");
         printf("logfile 本程序运行的日志文件名。\n");
         printf("ip      外网代理服务端的地址。\n");
         printf("port    外网代理服务端的端口。\n\n\n");
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     if(TcpClien.ConnectToServer(argv[2], atoi(argv[3])) == false)
     {
         logfile.Write("TcpClien.ConnectToServer(%s, %s) failed\n", argv[2], argv[3]);
-        EXIT(-1);
+        return -1;
     }
 
     cmdconnsock = TcpClien.m_connfd;

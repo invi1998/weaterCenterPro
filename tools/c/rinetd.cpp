@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     logfile.Write("加载代理路由参数成功（%d)\n", vroute.size());
 
     // 初始化监听内容程序的端口，等待内网发起连接，建立控制通道
-    if((cmdconnsock = initserver(atoi(argv[3]))) < 0)
+    if((cmdlistensock = initserver(atoi(argv[3]))) < 0)
     {
         logfile.Write("初始化内网监听端口(%s)失败\n", argv[3]);
         EXIT(-1);
