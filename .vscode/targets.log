@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue May 10 23:29:37 2022
+# Make data base, printed on Wed May 11 16:16:54 2022
 
 # Variables
 
@@ -55,7 +55,7 @@ LESSOPEN = ||/usr/bin/lesspipe.sh %s
 # environment
 VSCODE_CWD = /home/invi
 # environment
-SSH_CONNECTION = 192.168.31.186 62813 192.168.31.133 22
+SSH_CONNECTION = 192.168.31.186 57706 192.168.31.133 22
 # environment
 PATH = /home/invi/.vscode-server/bin/57fd6d0195bb9b9d1b49f6da5db789060795de47/bin/remote-cli:/opt/rh/devtoolset-8/root/usr/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/invi/.local/bin:/home/invi/bin:/usr/local/git:/home/invi/.local/bin:/home/invi/bin:/home/invi/bin:/oracle/home/bin:.
 # environment
@@ -71,7 +71,7 @@ VSCODE_PIPE_LOGGING = true
 # environment
 PWD = /project
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-e3cfb8a3-1aab-4725-887e-830e3ab60998.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-876ed8af-5f11-4298-bfe1-71360646be66.sock
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
@@ -131,7 +131,7 @@ MAKEFLAGS = Rrqp
 # environment
 MFLAGS = -Rrqp
 # environment
-SSH_CLIENT = 192.168.31.186 62813 22
+SSH_CLIENT = 192.168.31.186 57706 22
 # environment
 MAIL = /var/spool/mail/invi
 # automatic
@@ -236,7 +236,7 @@ GNUmakefile:
 
 # strcache hash-table stats:
 # Load=17/8192=0%, Rehash=0, Collisions=1/20=5%
-# Finished Make data base on Tue May 10 23:29:37 2022
+# Finished Make data base on Wed May 11 16:16:54 2022
 
  
 make: *** No rule to make target `all'.  Stop.

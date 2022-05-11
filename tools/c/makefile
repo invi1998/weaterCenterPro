@@ -34,7 +34,7 @@ CFLAGS = -g
 all:procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles tcpgetfiles fileserver execsql\
 	dminingmysql xmltodb syncupdate syncincrement syncincrementex deletetable migratetable xmltodb_oracle\
 	deletetable_oracle migratetable_oracle dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle\
-	webserver inetd
+	webserver inetd rinetd rinetdin
 
 procctl:procctl.cpp
 	g++ -o procctl procctl.cpp -lpthread
@@ -142,7 +142,15 @@ inetd:inetd.cpp
 	g++ $(CFLAGS) -o inetd inetd.cpp $(PUBINCL) $(PUBcpp) -lpthread -lm -lc
 	cp inetd ../bin/.
 
+rinetd:rinetd.cpp
+	g++ $(CFLAGS) -o rinetd rinetd.cpp $(PUBINCL) $(PUBcpp) -lpthread -lm -lc
+	cp rinetd ../bin/.
+
+rinetdin:rinetdin.cpp
+	g++ $(CFLAGS) -o rinetdin rinetdin.cpp $(PUBINCL) $(PUBcpp) -lpthread -lm -lc
+	cp rinetdin ../bin/.
+
 clean:
 	rm -f procctl checkproc gzipfiles deletefiles ftpgetfiles ftpputfiles tcpputfiles fileserver tcpgetfiles execsql dminingmysql\
 			xmltodb syncupdate syncincrement syncincrementex deletetable migratetable xmltodb_oracle deletetable_oracle migratetable_oracle\
-			dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle webserver inetd
+			dminingmysql_oracle syncupdate_oracle syncincrement_oracle syncincrementex_oracle webserver inetd rinetd rinetdin
